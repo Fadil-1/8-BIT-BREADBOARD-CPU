@@ -2,9 +2,7 @@
 This project is a detailed overview and repository for my 8-bit breadboard computer. Like most breadboard computers on te internet today, the design is inspired by Ben Eater's's 8-bit CPU series. My build is expanded to include various additional features such as an OLED display, SPI BUS, and 48-K-byte of RAM.
 
 
-![](https://drive.google.com/uc?export=view&id=1J6w5AhHXn8bqoUTQK_zxlKinYP8Q_5Fw)
-
-
+![Full](https://github.com/Fadil-1/8-BIT-BREADBOARD-CPU/blob/main/images/full_cropped.png?raw=true)
 
 
 ## Acknowledgment
@@ -29,7 +27,7 @@ A HUGE thank you to [ULF_Casper](https://github.com/DerULF1) for his 8-bit CPU s
 - 4-bit microcode step counter(With dynamic microsteps reset)
 
 
-![Breadboard Layout](https://drive.google.com/uc?export=view&id=1zukj_0ZykpeB-WHHXUYvnjysiwniDT3_)
+![Breadboard Layout](https://github.com/Fadil-1/8-BIT-BREADBOARD-CPU/blob/main/images/layout.jpeg?raw=true)
 
 
 ## Current Control Words
