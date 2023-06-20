@@ -1,5 +1,7 @@
 # 8-BIT-BREADBOARD-CPU
-This project is a detailed overview and repository for my 8-bit breadboard computer. Like most breadboard computers on te internet today, the design is inspired by ![Ben Eater's 8-bit CPU series](https://www.youtube.com/watch?v=HyznrdDSSGM&list=PLowKtXNTBypGqImE405J2565dvjafglHU). My build is expanded to include various additional features such as an OLED display, SPI BUS, and 48-K-byte of RAM.
+This project is a detailed overview and repository for my 8-bit breadboard computer. Like most breadboard computers on te internet today, the design is inspired by ![Ben Eater](https://github.com/beneater)'s ![8-bit CPU series](https://www.youtube.com/playlist?list=PLowKtXNTBypGqImE405J2565dvjafglHU). My build is expanded to include various additional features such as an OLED display, SPI BUS, and 48-K-byte of RAM.
+
+
 
 
 ![Full](https://github.com/Fadil-1/8-BIT-BREADBOARD-CPU/blob/main/images/full_cropped.png?raw=true)
@@ -7,7 +9,7 @@ This project is a detailed overview and repository for my 8-bit breadboard compu
 
 ## Acknowledgment
 
-A HUGE thank you to [ULF_Casper](https://github.com/DerULF1) for his 8-bit CPU ![series](https://www.youtube.com/watch?v=yACH8p4KfyQ&list=PL5-Ar_CvItgaP27eT_C7MnCiubkyaEqF0). His design, especially the interrupt handling design and the PS2 module, served as a foundation for the I/O in my build. The PS2 module is so well-implemented that I integrated it into my build with no changes.
+A HUGE thank you to [ULF_Casper](https://github.com/DerULF1) for his 8-bit CPU ![series](https://www.youtube.com/playlist?list=PL5-Ar_CvItgaP27eT_C7MnCiubkyaEqF0). His design, especially the interrupt handling design and the PS2 module, served as a foundation for the I/O in my build. The PS2 module is so well-implemented that I integrated it into my build with no changes.
 
 
 ## Features
