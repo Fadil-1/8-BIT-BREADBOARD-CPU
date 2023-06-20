@@ -275,23 +275,6 @@ instructions_without_flags[adr] =([ ALU_ZERO | ZW,                              
                              f'RST')
 
 
-'''
-RESET steps:
-
-1) Force 0 in IR output(microcode ROM input)
-2) Hold reset button(this keeps the microcode counter and PC at zero)
-3) Power on 
-3) release reset button(this will start the steps of the RST code and actually write 0 in IR)
-4) Hold reset button again(to hold PC to zero)
-5) "Unforce"/unplug the forced zeros from IR's output / ROM input.
-
-At this point there is zero in the IR and the microcode 
-wont step up because the reset button is being held
-
-6) Now release the reset button: The reset process will run normally.
-
-'''
-
 
 ## INTERRUPT (From 16 to 31)
 add_microcode(full_microcode(  FE | _SPE | _MW | SPD | TI,                # Write flag to stack memory and toggle interrupt.

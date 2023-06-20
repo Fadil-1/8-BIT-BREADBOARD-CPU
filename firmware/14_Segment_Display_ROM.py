@@ -1,17 +1,6 @@
 '''
-STATUS: WORKING!
 
-TO DO:
-GIVE BETTER NAME TO VARIABLES, AND REORGANIZE FOR LEGIBILITY. EXPLAIN WHY EEPROM IMAGE(BIN FILE) SIZE
-MUST BE THE SAME AS EEPROM SIZE. The EEPROM programmer software displays my values as follow
-Real values:         c3f    406   db   ...
-EEPROM programmer :  3f0c   0604  db00 ... 
-Outputs are correct on the displays when I just write from the EEPROM programmer without modifying the bytes order.
-Is it just displaying this way? Is it writing this way? Go over that.
-
-THIS PROGRAM GENERATES BINARY DECODER EEPROMS FOR FOUR PARALLEL 7 SEGMENT DISPLAYS.
-THE CORRESPONDING FALSTAD CIRCUIT CAN BE FOUND AT https
-
+THIS PROGRAM GENERATES BINARY DECODER EEPROMS FOR SIX PARALLEL 14-SEGMENT DISPLAYS.
 
      _____                 _____                 _____                 _____                _____               _____  
     |_\|/_|               |_\|/_|               |_\|/_|               |_\|/_|              |_\|/_|             |_\|/_| 
