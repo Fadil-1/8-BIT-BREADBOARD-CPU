@@ -1,0 +1,1 @@
+I generate my machine code with comma-separated-hex format with Customasm using "customasm <filename>.asm -f hexcomma" 
