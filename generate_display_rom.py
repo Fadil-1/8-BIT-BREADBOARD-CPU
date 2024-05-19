@@ -73,9 +73,5 @@ def generate_display_rom():
     print(f"Filling {COMPLEMENTS_SIGN_END:,} to {COMPLEMENTS_SIGN_END + FILL:,}(unused addresses) with zeros\n")
     for x in range(FILL):
       doc.write(array.array("H", [0x0]))
-
-    # Closes the file after writing the ROM.
     doc.close()
-
-# Calling the function to generate the ROM.
 generate_display_rom()
