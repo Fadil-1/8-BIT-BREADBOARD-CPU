@@ -74,4 +74,6 @@ def generate_display_rom():
     for x in range(FILL):
       doc.write(array.array("H", [0x0]))
     doc.close()
+
+# Calling the function to generate the ROM.
 generate_display_rom()
