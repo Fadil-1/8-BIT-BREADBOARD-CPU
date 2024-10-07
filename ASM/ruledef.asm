@@ -232,8 +232,8 @@
     PUL  $C    => 0xe5 
     PSH  $D    => 0xe6 
     PUL  $D    => 0xe7 
-    PSF  $D    => 0xe8 
-    PLF  $D    => 0xe9 
+    PSF   => 0xe8 
+    PLF   => 0xe9 
     MOV  $SP, $CD   => 0xea 
     MOV  $CD, $SP   => 0xeb 
     JMP  {address: u16} => 0xec @ le(address)
