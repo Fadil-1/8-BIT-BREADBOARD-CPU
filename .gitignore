@@ -1,0 +1,36 @@
+# Editor / IDE state
+.vscode/
+.idea/
+*.code-workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+env/
+
+# Local environment files
+.env
+.env.*
+
+# Build / temporary outputs
+build/
+**/build/
+tmp/
+temp/
+*.tmp
+*.bak
+*.log
+
+# Custom local readback / scratch files
+readback_*.bin
+*_readback.bin
+*_annotated.txt
+*_manifest.txt
