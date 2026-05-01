@@ -3,7 +3,7 @@
 ; range[0 : 65535] on 6-digit 14-segment display (Works on microcode V1)
 ;----------------------------------------------------------------------
 
-#include "ruledef.asm"
+#include "../ruledef.asm"
 
 ; Offsets the starting address to the boot loader ROM's location (0xC000) to align jump operations.
 #addr 0xC000 

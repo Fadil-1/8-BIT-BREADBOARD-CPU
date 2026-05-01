@@ -6,7 +6,7 @@
 ;----------------------------------------------------------------------
 
 
-#include "ruledef.asm"
+#include "../ruledef.asm"
 ; Offsets the starting address to the boot loader ROM's location (0xC000) to align jump operations.
 #addr 0xC000 
 ; Makes sure to start at highest speed
