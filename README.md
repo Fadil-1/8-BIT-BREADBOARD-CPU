@@ -61,9 +61,6 @@ ASM/programs/
 ASM/ruledef.asm
     Generated CustomASM rule definitions for the current instruction set.
 
-Binaries/
-    Binary artifacts used by the project.
-
 generated/
     Generated files produced by project tools.
 
@@ -76,6 +73,12 @@ tools/microcode/
 
 tools/deployment/
     Scripts for assembling, packaging, writing, and verifying ROM/SD payloads.
+
+generated/display_rom/
+    Generated binary image for the 14-segment display ROM.
+
+tools/display_rom/
+    Generator for the 14-segment display ROM.
 
 tools/oled/
     OLED-related generator scripts, including the 5x7 text library generator.
