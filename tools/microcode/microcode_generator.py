@@ -1,13 +1,33 @@
-'''
-Fadil Isamotu 
-May 2024 (v1.0)
-'''
+#!/usr/bin/env python3
+"""
+Microcode generator for the breadboard CPU.
+
+Generates:
+  - microcode_rom_0.bin
+  - microcode_rom_1.bin
+  - microcode_rom_2.bin
+  - ruledef.asm
+  - instructions.md
+
+Original version: May 2024
+Updated: April 2026
+Fadil Isamotu
+"""
+
 from copy import deepcopy
+from pathlib import Path
 import array
 import traceback
 
-INTPUT_WORD_SIZE = 18 # From 0 to 17 --> 18-bit word
-ROM_SIZE = 2**INTPUT_WORD_SIZE
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+GENERATED_MICROCODE_DIR = PROJECT_ROOT / "generated" / "microcode"
+RULEDEF_OUTPUT = PROJECT_ROOT / "ASM" / "ruledef.asm"
+INSTRUCTIONS_OUTPUT = GENERATED_MICROCODE_DIR / "instructions.md"
+
+INPUT_WORD_SIZE = 18 # From 0 to 17 --> 18-bit word
+ROM_SIZE = 2**INPUT_WORD_SIZE
+
 
 # ROM 0
 _CLKW  = 1 <<  15  #  Clock speed select
@@ -24,7 +44,7 @@ IR_in  = 1 <<  5   #  Instruction register in
 TI     = 1 <<  4   #  Toggle interrupt(Sets interrupt to the opposite of its current state)
 _OS    = 1 <<  3   #  OLED select(D/C# Data by default, command when asserted)
 OR     = 1 <<  2   #  OLED data(Read/_Write Write by default, and read when asserted)
-_OE     = 1 <<  1  #  OLED enable(Read/write: read when pulled high; write by default)
+OE     = 1 <<  1  #  OLED enable(Read/write: read when pulled high; write by default)
 _OC    = 1         #  OLED clear
 
 # ROM 1
@@ -86,7 +106,7 @@ SPlE  =        RD_2 | RD_1        #  Stack Pointer lower byte Enable
 IE    =        RD_2 |        RD_0 #  I Register(Interrupt register) enable 
 ME    =        RD_2               #  Memory enable to 8-bit bus 
 
-active_low_lines = _CLKW | _DW | _BW | _HC  | _FW | _OE | _OS | _OC | _ScR | \
+active_low_lines = _CLKW | _DW | _BW | _HC  | _FW | _OS | _OC | _ScR | \
 _PChE | _PClE | _EE | _PSE | _PSW | _SPC | _SPE | _MW | \
 _BRE | _PCE | _PCW | _PS
  
@@ -129,59 +149,42 @@ These are the instruction bits(2^8 = up to            |            These are the
                                               Inhibit         = 16 steps max)      
 """
 
-def build_address(instruction=0b0, step=0b0, II=0b0, IR=0b0, Z=0b0, O=0b0, N=0b0, C=0b0):
-   '''
-   Organizes bit position of every element in the microcode input.
-   If an element of the input word is not input it will default to 0.
-   '''
-   return instruction << 10 | step << 6 | II << 5 | IR << 4 | Z << 3 | O << 2 | N << 1 | C
-
 def al_norm(microcode):
     '''
     al_norm(Active_low normalization):
-    Ensures that active low lines stay high and active high lines stay low
-    when not needed in a microcode by "XORing" the current control word with the bits
-    position of all active-low control lines. 
+    Maintains active-low lines at high and active-high lines at low when inactive in microcode
+    by XORing the current control word with the bit positions of all active-low lines.
     '''
     return microcode ^ active_low_lines
 
 def trim_word(EPROM_number, microcode):
-  '''
-  Trims a part of the microcode for it's corresponding EPROM.
-  Refer to docstring to see how EPROMS are layed out.
-  '''
-  shifted_microcode = microcode >> (16*EPROM_number)
-  mask = 0xFFFF # 16 1s
-  return shifted_microcode & mask # AND the 16 output bits of the selected EPROM 
+    '''
+    Trims a part of the microcode for it's corresponding EPROM.
+    Refer to docstring to see how EPROMS are layed out.
+    '''
+    return (microcode >> (16 * EPROM_number)) & 0xFFFF
 
 # Keeps track of the current instruction's address.
 adr = 0
-
 FETCH = [_PCE | ME | IR_in | PCC] # Fetch micro code 
 
-def full_microcode(t_1 = 0, t_2 = 0, t_3 = 0, t_4 = 0, t_5 = 0, t_6 = 0,
-                    t_7 = 0, t_8 = 0, t_9 = 0, t_10 = 0, t_11 = 0,
-                      t_12 = 0, t_13 = 0, t_14 = 0, t_15 = 0):
+def full_microcode(*steps):
     """
     Creates full microcode for a single instruction and ends it by resetting the step counter.
     Note that, the maximum number of micro steps allowed when using this function is 15, as 
     t_0 is automatically prepended with the fetch cycle. 
     """
     global adr
-
-    steps = [t_1, t_2, t_3, t_4, t_5, t_6, t_7, t_8, 
-             t_9, t_10, t_11, t_12, t_13, t_14, t_15]
+    step_list = list(steps)
+    step_list.extend([0] * (15 - len(step_list)))
     
-    for i, step in enumerate(steps):
+    for i, step in enumerate(step_list):
         if step == 0:
-            steps[i] = _ScR
+            step_list[i] = _ScR
             break
 
-    steps = FETCH + steps
     adr += 1
-
-    return steps
-
+    return FETCH + step_list
 
 instructions_without_flags = dict()
 recycling_address = []
@@ -198,7 +201,7 @@ $   Register
 #   Number
 @   Address
 []  Memory location
-[@] Address at a memory location
+[@] Memory at a 16-bit address operand
 [#] Number at a memory location
 '''
 
@@ -220,28 +223,28 @@ enable_reg = {'A': AE,
               'E': _EE,
               'I': IE}
 
-
 ####################
 ### RESET VECTOR ###
 ####################
 INACTIVE = al_norm(active_low_lines)
-instructions_without_flags[adr] =([ ALU_ZERO | ZW | _OC,                                    
-                                    ALU_ZERO | ZW | _OC,                                
-                                    ZE | AW  | BRlW | BRhW | IR_in | _OC,                    
-                                    ZE | CW  | _BRE | SPW  | FLG_MIRROR_BUS | _FW | _OC,     
-                                    ZE | SdT | _SPC | SPD,                             
-                                    ZE | SdW | _BW | _DW | EW | SHIFT_REG_SR | H_cin,  
-                                    SHIFT_REG | ZW,                                    
-                                    ZE | SHIFT_REG_SR | H_cin,                         
-                                    SHIFT_REG | ZW,                                    
-                                    ZE | BRhW,                                         
-                                    _BRE | _PCW,                                       
-                                    TI,                           
-                                    INACTIVE, INACTIVE, INACTIVE, 
-    
-    
-                                    _PCE | ME | IR_in],                       
+
+instructions_without_flags[adr] =([ ALU_ZERO | ZW | _OC,                              # t = 0  Writes zero into accumulator & clears OLED.
+                                    ZE | AW | BRlW | BRhW | IR_in | _OC,              # t = 1  Writes 0 into $A, bridge, and IR & clears OLED.
+                                    ZE | CW | FLG_MIRROR_BUS | _FW | _OC,             # t = 2  Writes 0 into $C and flags register & clears OLED.
+                                    ZE | SdT,                                         # t = 3  Writes zero into temporary segmented display register.
+                                    ZE | SdW | _BW | _DW | EW | SHIFT_REG_SR | H_cin, # t = 4  Writes 0 into segmented display, $B, $D, $E; writes 0x80 into shift register.
+                                    SHIFT_REG | ZW,                                   # t = 5  Writes 0x80 into accumulator.
+                                    ZE | SHIFT_REG_SR | H_cin,                        # t = 6  Writes 0xC0 into shift register.
+                                    SHIFT_REG | ZW,                                   # t = 7  Writes 0xC0 into accumulator.
+                                    ZE | BRhW,                                        # t = 8  Writes 0xC0 into high byte of bridge. Bridge is now 0xC000.
+                                    _BRE | SPW,                                       # t = 9  Loads stack pointer with 0xC000.
+                                    _SPC | SPD,                                       # t = 10 Counts stack pointer down to 0xBFFF.
+                                    _BRE | _PCW,                                      # t = 11 Loads PC with 0xC000.
+                                    TI,                                               # t = 12 Toggle interrupt.
+                                    INACTIVE, INACTIVE,                               # t = 13,14 Padding.
+                                    _PCE | ME | IR_in],                               # t = 15 Fetch first opcode from 0xC000.
                                     f'RST')
+
 #################
 ### Set carry ### 
 #################
@@ -308,8 +311,6 @@ add_microcode(full_microcode(enable_reg['E'] | ALU_MIRROR_BUS,
                              SHIFT_REG | ZW,
                              _PCE | ME | ALU_ACC_minus_BUS | _FW | PCC), 
                              f'CMP $E, #') 
-
-                                                 
 
 ## DIRECT REGISTER WITH E
 for reg in ABCD:
@@ -382,8 +383,8 @@ for dest in ABCD:
 ### INDIRECT REGISTER ###
 #########################
 
-# Read
 for dest in ABCD:
+        # Read
         add_microcode(full_microcode( CE | BRlW,
                                       DE | BRhW,
                                      _BRE | ME | write_to_reg[dest]), 
@@ -494,6 +495,7 @@ for dest in ABCD:
                                 SHIFT_REG | ZW,
                                 _BRE | ME | ALU_ACC_minus_BUS | _FW),
                                 f'CMP ${dest}, [@]') 
+
 ###########
 ### I/O ###
 ###########
@@ -513,25 +515,25 @@ add_microcode(full_microcode(enable_reg['B'] | SdW),
                                 f'SDH $B')
 
 ## Port Selector
-# Output: Write content in RA to port selected from memory content.  
+# Output: Write content in $A to port selected from memory content.  
 add_microcode(full_microcode(_PCE | ME | _PS | PCC, 
                              AE | _PSW),            
-                            f'OUT #, RA')
+                            f'OUT #, $A')
 
-# Input: Write content in port from memory content to RA.  
+# Input: Write content in port from memory content to $A.  
 add_microcode(full_microcode(_PCE | ME | _PS | PCC, 
                              AW | _PSE),            
-                            f'INP RA, #')
+                            f'INP $A, #')
 
-# Output: Write content of RA to port in RB.
+# Output: Write content of $A to port in $B.
 add_microcode(full_microcode(BE | _PS,         
                              AE | _PSW),       
-                            f'OUT RB, RA')
+                            f'OUT $B, $A')
 
-# INPUT: Write content from port in RB to RA.
+# INPUT: Write content from port in $B to $A.
 add_microcode(full_microcode(BE | _PS,         
                              AW | _PSE),       
-                            f'INP RA, RB')
+                            f'INP $A, $B')
 
 ## OLED DISPLAY
 # Reset
@@ -539,29 +541,29 @@ add_microcode(full_microcode(_OC,_OC,_OC,_OC,_OC,_OC), f'OLR')
 
 # Data immediate
 add_microcode(full_microcode(_PCE | ME, 
-                             _OE | _PCE | ME | PCC),
+                             OE | _PCE | ME | PCC),
                             f'OLD #')
 
 add_microcode(full_microcode(_OS | _PCE | ME,
-                             _OE |  _OS | _PCE | ME | PCC),
+                             OE |  _OS | _PCE | ME | PCC),
                             f'OLC #')
 
 # Data direct register
 add_microcode(full_microcode(enable_reg['A'],
-                            _OE | enable_reg['A']),
+                            OE | enable_reg['A']),
                             f'OLD $A')
 
 add_microcode(full_microcode(enable_reg['B'],
-                            _OE | enable_reg['B']),
+                            OE | enable_reg['B']),
                             f'OLD $B')
 
 # Command direct register
 add_microcode(full_microcode(_OS | enable_reg['A'],
-                             _OS | _OE | enable_reg['A']),
+                             _OS | OE | enable_reg['A']),
                             f'OLC $A')
 
 add_microcode(full_microcode(_OS | enable_reg['B'],
-                             _OS | _OE | enable_reg['B']),
+                             _OS | OE | enable_reg['B']),
                             f'OLC $B')
 
 #############
@@ -572,47 +574,52 @@ add_microcode(full_microcode(_OS | enable_reg['B'],
 
 # Register
 for src in ABCD:
-    add_microcode(full_microcode(enable_reg[src] | SHIFT_REG_SL | _FW, 
-                                 SHIFT_REG | ZW,                       
-                                 write_to_reg[src] | ZE),              
+    add_microcode(full_microcode(enable_reg[src] | ALU_MIRROR_BUS,     # Parallel Load into 74LS194
+                                 SHIFT_REG_SL | _FW | enable_reg[src], # Shifts Left and update flags
+                                 SHIFT_REG | ZW,                       # Latches shift result into Accumulator
+                                 write_to_reg[src] | ZE),              # Writes Acc to destination register
                                  f'LSL ${src}')
 # Address
-add_microcode(full_microcode(_PCE | ME | BRlW | PCC, 
-                             _PCE | ME | BRhW,       
-                             _BRE | ME | SHIFT_REG_SL | _FW, 
-                             SHIFT_REG | ZW | PCC,     
-                             _BRE | ZE | _MW ),        
+add_microcode(full_microcode(_PCE | ME | BRlW | PCC,              
+                             _PCE | ME | BRhW,                    
+                             _BRE | ME | ALU_MIRROR_BUS | PCC,    
+                             SHIFT_REG_SL | _FW | _BRE | ME,                  
+                             SHIFT_REG | ZW,                      
+                             _BRE | ZE | _MW ),                   
                             'LSL [@]')
 # Indirect
-add_microcode(full_microcode( CE | BRlW, 
-                              DE | BRhW, 
-                             _BRE | ME | SHIFT_REG_SL | _FW,
-                              SHIFT_REG | ZW,                
-                             _BRE | ZE | _MW ),              
+add_microcode(full_microcode( CE | BRlW,                          
+                              DE | BRhW,                          
+                             _BRE | ME | ALU_MIRROR_BUS,          
+                              SHIFT_REG_SL | _FW | _BRE | ME,                 
+                              SHIFT_REG | ZW,                     
+                             _BRE | ZE | _MW ),                   
                             'LSL [$CD]')
-###################
-### Right Shift ###
-###################
+
+### Right Shift 
 
 ## Register
 for src in ABCD:
-    add_microcode(full_microcode(enable_reg[src] | SHIFT_REG_SR | _FW, 
-                                 SHIFT_REG | ZW,                       
-                                 write_to_reg[src] | ZE),              
+    add_microcode(full_microcode(enable_reg[src] | ALU_MIRROR_BUS, 
+                                 SHIFT_REG_SR | _FW | enable_reg[src],               
+                                 SHIFT_REG | ZW,                   
+                                 write_to_reg[src] | ZE),          
                                  f'LSR ${src}')
 ## Address
-add_microcode(full_microcode(_PCE | ME | BRlW | PCC, 
-                             _PCE | ME | BRhW,       
-                             _BRE | ME | SHIFT_REG_SR | _FW,
-                             SHIFT_REG | ZW | PCC,       
-                             _BRE | ZE | _MW ),          
+add_microcode(full_microcode(_PCE | ME | BRlW | PCC,                
+                             _PCE | ME | BRhW,                      
+                             _BRE | ME | ALU_MIRROR_BUS | PCC,      
+                             SHIFT_REG_SR | _FW | _BRE | ME,                    
+                             SHIFT_REG | ZW,                        
+                             _BRE | ZE | _MW ),                     
                             'LSR [@]')
 ## Indirect
-add_microcode(full_microcode( CE | BRlW, 
-                              DE | BRhW, 
-                             _BRE | ME | SHIFT_REG_SR | _FW, 
-                              SHIFT_REG | ZW,                
-                             _BRE | ZE | _MW ),              
+add_microcode(full_microcode( CE | BRlW,                            
+                              DE | BRhW,                            
+                             _BRE | ME | ALU_MIRROR_BUS,            
+                              SHIFT_REG_SR | _FW | _BRE | ME,                   
+                              SHIFT_REG | ZW,                       
+                             _BRE | ZE | _MW ),                     
                             'LSR [$CD]')
 
 #################
@@ -634,7 +641,7 @@ add_microcode(full_microcode(FE | _SPE | _MW | SPD,
 
 
 add_microcode(full_microcode(_SPC | ALU_ZERO | ZW,       
-                             _SPE | ME | ALU_OR | _FW),  
+                             _SPE | ME | FLG_MIRROR_BUS | _FW),  
                              f'PLF')              
 
 #####################
@@ -735,11 +742,11 @@ add_microcode(full_microcode(PCC,
 #################
 
 # SET II
-add_microcode(full_microcode(),    # Write content of RA to selected I/O
+add_microcode(full_microcode(),    # Write content of $A to selected I/O
                             f'SII')
 
 # CLEAR II
-add_microcode(full_microcode(),    # Write content of RA to selected I/O
+add_microcode(full_microcode(),    # Write content of $A to selected I/O
                             f'CII')
 
 # INTERRUPT HANDLER
@@ -778,14 +785,11 @@ add_microcode(full_microcode(), f'NOP')
 ############
 add_microcode(full_microcode(HLT), f'HLT')
 
-
-
 # Fill Unused instructions with NO OPS:
 number_of_fillers = 0 
 while len(instructions_without_flags) < 256:
     number_of_fillers += 1
     add_microcode(full_microcode(), f'FILLER_{number_of_fillers}')
-
 
 # Key = The instruction string/name; Value = instruction 
 instructions_dict = {y[1]: x for x, y in instructions_without_flags.items()}
@@ -809,9 +813,8 @@ JNC  = instructions_dict['JNC [@]']
 SII  = instructions_dict['SII']
 CII  = instructions_dict['CII']
 
-# Creates a copy of the micro-code dictionary for every flags combination.
+# Makes a copy of the micro-code dictionary for every flags combination.
 microcode = [deepcopy(microcode_dict) for x in range ((C_Flag  | Z_Flag | N_Flag  | O_Flag  | II_Flag | IRQ_Flag) + 1)]
-
 
 # CONDITIONAL JUMPS MICRO-OPERATIONS
 # The interrupt code starts at address 16(10000). Register I is hardwired to 16. 
@@ -820,7 +823,6 @@ jump_to_interrupt_handler = [ALU_ZERO | ZW | IW, # Writes 0 into the accumulator
                           IE | BRlW,          # Writes interrupt address into lower byte of bridge.
                           _BRE | _PCW,        # Writes location of interrupt code in PC. 
                           _ScR]               # End the microcode by resetting the step counter.
-
 
 # JMP @ instruction 
 conditional_jump = FETCH + [_PCE | ME | BRlW | PCC, # Writes RAM content at PC address to lower byte of bridge, increment PC by 1.
@@ -832,173 +834,76 @@ conditional_jump = FETCH + [_PCE | ME | BRlW | PCC, # Writes RAM content at PC a
 set_II = clear_II = FETCH + [TI, 
                             _ScR]
 
-
-def cond_jmp(micro_operations, jp = conditional_jump.copy()):
+def cond_jmp(micro_operations, jp=conditional_jump.copy()):
     """
-    Dynamically converts an unconditional instruction to a conditional instruction; moving the 
-    position of the step counter clear signal and using the jump argument as the specific jump code. 
+    Dynamically converts an unconditional instruction to a conditional instruction.
+    Moves the position of the step counter clear signal and uses the jump argument 
+    as the specific jump code. 
     """
-    
     jump = jp.copy()
- 
     if jump != jump_to_interrupt_handler:
-        micro_operations [:] = jump  + (16-len(jump))*[0] # Fill the rest of the list with zeros till it reaches length 16
-
+        micro_operations[:] = jump + (16-len(jump))*[0] # Fill the rest of the list with zeros till it reaches length 16.
     else:
-
         start = micro_operations.index(_ScR) 
-        new_instruction_length = end = start + len(jump)
-
-        if new_instruction_length < 16:
-            micro_operations[start : end] = jump
-
-        elif new_instruction_length == 16:
-            micro_operations[start: ] = jump
-
-        # Safeguard in case of lengths greater than 16.
+        end = start + len(jump)
+        if end <= 16:
+            micro_operations[start:end] = jump
         else:
             raise ValueError()
-    
 
+def apply_conditional_branching(flags):
+    """Evaluation of common jump flags to prevent redundant lines"""
+    Z = flags & Z_Flag
+    O = flags & O_Flag
+    N = flags & N_Flag
+    C = flags & C_Flag
 
+    cond_jmp(microcode[flags][JZ]) if Z else cond_jmp(microcode[flags][JNZ])
+    cond_jmp(microcode[flags][JO]) if O else cond_jmp(microcode[flags][JNO])
+    cond_jmp(microcode[flags][JN]) if N else cond_jmp(microcode[flags][JP])
+    cond_jmp(microcode[flags][JC]) if C else cond_jmp(microcode[flags][JNC])
+
+    if not N and not Z:
+        cond_jmp(microcode[flags][JGZ])
 
 def generate_microcode():
     global kk, xx
     # For every possible combination of flags
-    for flags in range((II_Flag | IRQ_Flag | Z_Flag | O_Flag | N_Flag | C_Flag ) + 1):
+    for flags in range((II_Flag | IRQ_Flag | Z_Flag | O_Flag | N_Flag | C_Flag) + 1):
         '''
         ANDing with the current flag combination basically defines 
         which flag is active in this value/iteration of the loop.
         EX: If loop is at 010010, IRQ and N would be HIGH, from teh set of ANDs below.
         '''
-    
         II  = flags & II_Flag 
         IRQ = flags & IRQ_Flag
-        Z   = flags & Z_Flag  
-        O   = flags & O_Flag  
-        N   = flags & N_Flag  
-        C   = flags & C_Flag  
         
         try:
-        
             # If an interrupt service is requested while the interrupt 
             # inhibit signal is asserted; ignore the request.
             if IRQ and II:
-
-                if Z:
-                    cond_jmp(microcode[flags][JZ])
-                else:
-                    cond_jmp(microcode[flags][JNZ]) 
- 
-                if O:
-                    cond_jmp(microcode[flags][JO]) 
-                else:
-                    cond_jmp(microcode[flags][JNO]) 
- 
-                if N: 
-                    cond_jmp(microcode[flags][JN]) 
-                else:
-                    cond_jmp(microcode[flags][JP]) 
- 
-                if C:
-                   cond_jmp(microcode[flags][JC]) 
-                else:
-                   cond_jmp(microcode[flags][JNC]) 
- 
-                if (not N and not Z):
-                    cond_jmp(microcode[flags][JGZ])
-
+                apply_conditional_branching(flags)
 
             elif IRQ:
-                if Z:
-                    cond_jmp(microcode[flags][JZ])
-                else:
-                    cond_jmp(microcode[flags][JNZ]) 
- 
-                if O:
-                    cond_jmp(microcode[flags][JO]) 
-                else:
-                    cond_jmp(microcode[flags][JNO]) 
- 
-                if N: 
-                    cond_jmp(microcode[flags][JN]) 
-                else:
-                    cond_jmp(microcode[flags][JP]) 
- 
-                if C:
-                   cond_jmp(microcode[flags][JC]) 
-                else:
-                   cond_jmp(microcode[flags][JNC]) 
- 
-                if (not N and not Z):
-                    cond_jmp(microcode[flags][JGZ])
-
-                # Loop into all of the ocpodes for the current flags combination
+                apply_conditional_branching(flags)
+                # Loop into all the ocpodes for the current flags combination
                 for instruction, micro_operations in microcode[flags].items():
                     # Ignore reset and interrupt codes 
-                    if(instruction == 0 or instruction == interrupt_handler_address): 
+                    if instruction == 0 or instruction == interrupt_handler_address: 
                         continue
                     # Ignore filler instructions if any.
-                    if number_of_fillers:
-                        if instruction in range((256 - number_of_fillers), 256):
-                            continue
+                    if number_of_fillers and instruction in range((256 - number_of_fillers), 256):
+                        continue
                     # Add the micro-operations to jump to the interrupt code.
-                    cond_jmp(micro_operations, jp = jump_to_interrupt_handler)
+                    cond_jmp(micro_operations, jp=jump_to_interrupt_handler)
             
-
             elif II:
-
                 cond_jmp(microcode[flags][CII], clear_II) 
-
-                if Z:
-                    cond_jmp(microcode[flags][JZ]) 
-                else:
-                    cond_jmp(microcode[flags][JNZ]) 
-           
-                if O:
-                    cond_jmp(microcode[flags][JO]) 
-                else:
-                    cond_jmp(microcode[flags][JNO]) 
-
-                if N: 
-                    cond_jmp(microcode[flags][JN]) 
-                else:
-                    cond_jmp(microcode[flags][JP]) 
-
-                if C:
-                   cond_jmp(microcode[flags][JC]) 
-                else:
-                    cond_jmp(microcode[flags][JNC]) 
-
-                if (not N and not Z):
-                    cond_jmp(microcode[flags][JGZ])
+                apply_conditional_branching(flags)
 
             else:
-
                 cond_jmp(microcode[flags][SII], set_II) 
-
-                if Z:
-                    cond_jmp(microcode[flags][JZ]) 
-                else:
-                    cond_jmp(microcode[flags][JNZ]) 
-           
-                if O:
-                    cond_jmp(microcode[flags][JO]) 
-                else:
-                    cond_jmp(microcode[flags][JNO]) 
-
-                if N: 
-                    cond_jmp(microcode[flags][JN]) 
-                else:
-                    cond_jmp(microcode[flags][JP]) 
-
-                if C:
-                   cond_jmp(microcode[flags][JC]) 
-                else:
-                    cond_jmp(microcode[flags][JNC]) 
-
-                if (not N and not Z):
-                    cond_jmp(microcode[flags][JGZ])
+                apply_conditional_branching(flags)
 
         except Exception as e:
             trace = traceback.format_exc()
@@ -1007,13 +912,11 @@ def generate_microcode():
 
 generate_microcode()
 
-
 def assign_rom(microcode_list, rom_number):
     """
     Normalizes control line activation and shift bits to their appropriate ROM.
     Takes a microcode list of dictionaries. 
     """
-    # List of dictionaries
     EPROM = deepcopy(microcode_list)
     # For every dictionary in the list of dictionaries
     for microcode_dict in EPROM:
@@ -1021,65 +924,153 @@ def assign_rom(microcode_list, rom_number):
         for instruction in microcode_dict:
             # For every micro-operation at this instruction [a, b, c,...]
             for i, control_word in enumerate(microcode_dict[instruction]):
+                # Applies active-low normalization and isolates the 16-bit slice for this specific ROM.
                 microcode_dict[instruction][i] = trim_word(rom_number, al_norm(control_word))
     return EPROM
 
 roms = [assign_rom(microcode, 0), assign_rom(microcode, 1), assign_rom(microcode, 2)]
 
-
-def write_to_address(file, data):
-    data = array.array('H', [data])
-    file.write(data)
-
 def generate_microcode_rom():
+    """
+    Generates and exports the final binary files for the microcode EPROMs.
+    Iterates through the entire physical address space (ROM_SIZE) for each ROM and 
+    decodes the address bits back into the corresponding instruction, flags, and 
+    execution step. Retrieves the specific 16-bit control word for that state and 
+    stores it in a pre-allocated memory buffer (bytearray) in little-endian format. 
+    Optimizes performance by writing the entire ROM to disk in a single I/O 
+    operation rather than thousands of individual byte writes.
+    """
     for i, rom in enumerate(roms):
-        print(f'\nWriting Microcode for rom_{i}', end ='')
-        with open(f"microcode_rom_{i}.bin", 'wb') as file:
-            for address in range(ROM_SIZE):
-                if address % 5000 == 0:
-                    print(f'.', end = ' ')
+        print(f'\nWriting Microcode for rom_{i}...', end='', flush=True)
+        buffer = bytearray(ROM_SIZE * 2)
 
-                instruction = (address & 0b111111110000000000) >> 10 
-                flags_h = (address & 0b00000001100000000) >> 4 # Shifts only by four because it is ORed with the 4-bit ZONC
-                flags_l = address & 0b1111
-                flags   = flags_h | flags_l
-                step  = (address & 0b000000000011110000) >> 4
-                write_to_address(file, rom[flags][instruction][step])
+        for address in range(ROM_SIZE):
+            instruction = (address & 0b111111110000000000) >> 10 
+            flags_h = (address & 0b00000001100000000) >> 4 
+            flags_l = address & 0b1111
+            flags   = flags_h | flags_l
+            step  = (address & 0b000000000011110000) >> 4
+
+            word = rom[flags][instruction][step]
+            buffer[address * 2] = word & 0xFF
+            buffer[address * 2 + 1] = (word >> 8) & 0xFF
+
+        GENERATED_MICROCODE_DIR.mkdir(parents=True, exist_ok=True)
+
+        rom_path = GENERATED_MICROCODE_DIR / f"microcode_rom_{i}.bin"
+        with open(rom_path, 'wb') as file:
+            file.write(buffer)
+            
     print('\nDone!')
 
-generate_microcode_rom()
 
-def generate_ruledef():
+def generate_ruledef(use_new_le=False):
     '''
     Generates a ruledef.asm directive file for Customasm in Little Endian.
+    Toggle use_new_le=True to use newer @le layout syntax.
     '''
-    with open('ruledef.asm', 'w') as ruledef:
+    RULEDEF_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 
+    with open(RULEDEF_OUTPUT, 'w') as ruledef:
         ruledef.writelines('#ruledef\n{\n')
 
         for i, (instruction, _) in enumerate(instructions_dict.items()):
+            parts = instruction.split()
+            end = ''
+            formatted_parts = []
 
-            instruction = instruction.split()
+            if '@' in instruction:
+                end = '@le(address)' if use_new_le else '@ le(address)'
+            elif '#' in instruction:
+                end = '@ im'
 
-            end =''
-
-            ruledef.writelines('    ')
-
-            for z in instruction:
-            
+            for z in parts:
                 if '@' in z:
-                    end += '@ le(address)'
-                    ruledef.writelines(z.replace('@', 'address: u16').replace('[', '{').replace(']', '}').ljust(5))
-
-                elif '#' in instruction:
-                    end = '@ im'
-                    #end = ''
-                    ruledef.writelines(z.replace('#', '{im: i8}').ljust(5))
+                    formatted_parts.append(z.replace('@', 'address: u16').replace('[', '{').replace(']', '}'))
+                elif '#' in z:
+                    formatted_parts.append(z.replace('#', '{im: i8}'))
                 else:
-                    end += ''
-                    ruledef.writelines(z.ljust(5))
- 
-            ruledef.writelines(f" => 0x{i:02x} {end}\n") 
-        ruledef.writelines('}')
+                    formatted_parts.append(z)
 
-#generate_ruledef()
+            rebuilt_instruction = " ".join(formatted_parts)
+            ruledef.writelines(f"    {rebuilt_instruction.ljust(25)} => 0x{i:02x} {end}\n")
+            
+        ruledef.writelines('}\n')
+
+
+def generate_full_instruction_markdown(flags=0, output_file=INSTRUCTIONS_OUTPUT):
+    """
+    Generates a full markdown page of all instructions with micro steps.
+    """
+    CONTROL_LINE_MAP = {
+        "_OC": _OC, "OE": OE, "OR": OR, "_OS": _OS,
+        "TI": TI, "IR_in": IR_in, "_FW": _FW,
+        "Z1": Z1, "Z2": Z2, "ZS": ZS, "_HC": _HC,
+        "_SdE": _SdE, "H_cin": H_cin,
+        "_BW": _BW, "_DW": _DW, "_CLKW": _CLKW,
+        "_SPC": _SPC, "SPD": SPD, "SPW": SPW, "HLT": HLT,
+        "_PSW": _PSW, "_PSE": _PSE,
+        "EW": EW, "_EE": _EE,
+        "_PClE": _PClE, "_PChE": _PChE,
+        "BRlW": BRlW, "_ScR": _ScR,
+        "Z0": Z0, "SdM": SdM, "EX": EX,
+        "RD_0": RD_0, "RD_1": RD_1, "RD_2": RD_2, "RD_3": RD_3,
+        "WR_0": WR_0, "WR_1": WR_1, "WR_2": WR_2,
+        "_PS": _PS, "_PCW": _PCW, "PCC": PCC, "_PCE": _PCE,
+        "_BRE": _BRE, "ZW": ZW, "_MW": _MW,
+        "BRhW": BRhW, "_SPE": _SPE,
+    }
+
+    def decode(control_word):
+        return [name for name, bit in CONTROL_LINE_MAP.items() if control_word & bit]
+
+    def markdown_code_span(text):
+        """
+        Wraps instruction text in a Markdown code span so MathJax does not
+        interpret register names such as $A, $E, $CD, and $SP as equations.
+        """
+        return f"`{text}`"
+
+    markdown = ""
+
+    for opcode in sorted(instructions_without_flags.keys()):
+        micro_ops, name = instructions_without_flags[opcode]
+        hex_opcode = f"{opcode:02X}"
+        instruction_name = markdown_code_span(name)
+
+        markdown += f"## {instruction_name} (0x{hex_opcode})\n\n"
+
+        markdown += "| Microstep | Control Signals |\n"
+        markdown += "| :---: | :---: |\n"
+
+        steps = microcode[flags][opcode]
+
+        # --- FIND LAST NON-EMPTY STEP ---
+        last_valid = -1
+        for i, cw in enumerate(steps):
+            if decode(cw):
+                last_valid = i
+
+        # --- PRINT ONLY VALID STEPS ---
+        for i in range(last_valid + 1):
+            signals = ", ".join(decode(steps[i]))
+            markdown += f"| t_{i} | {signals} |\n"
+
+        markdown += "\n\n"
+
+    output_file = Path(output_file)
+    if not output_file.is_absolute():
+        output_file = PROJECT_ROOT / output_file
+
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_file, "w") as f:
+        f.write(markdown.strip())
+
+    print(f"Markdown generated → {output_file}")
+    return markdown
+
+# Make sure microcode is generated first
+generate_ruledef() # Toggle use_new_le=True here to use "@le" instead of the default "le"
+generate_full_instruction_markdown(flags=0)
+generate_microcode_rom()
