@@ -1,6 +1,6 @@
 # F8-BB: Expanded 8-bit Breadboard CPU
 
-F8-BB is my expanded 8-bit breadboard CPU. The project is inspired by [Ben Eater's 8-bit CPU series](https://www.youtube.com/playlist?list=PLowKtXNTBypGqImE405J2565dvjafglHU), but it has grown into a larger custom machine with a 16-bit address space, and additional I/O hardware.
+F8-BB is my expanded 8-bit breadboard CPU. The project is inspired by [Ben Eater's 8-bit CPU series](https://www.youtube.com/playlist?list=PLowKtXNTBypGqImE405J2565dvjafglHU), but it has grown into a larger custom machine with a 16-bit address space and additional I/O hardware.
 
 The goal of this repository is to collect the files needed to document, program, and maintain the build.
 
@@ -43,7 +43,23 @@ I also want to thank [DerULF1 / ULF_Casper](https://github.com/DerULF1) for his 
 
 ```text
 ASM/
-    Assembly programs, demos, and generated rule definitions.
+    Assembly source files.
+
+ASM/boot/
+    ROM bootstrap programs, including SD-card bootloader code.
+
+ASM/drivers/
+    Hardware-facing assembly libraries, including OLED and SPI/SD routines.
+
+ASM/libs/
+    Shared assembly helpers such as timing routines.
+
+ASM/programs/
+    Early standalone demo programs such as Fibonacci, bounce, OLED demos,
+    and display tests.
+
+ASM/ruledef.asm
+    Generated CustomASM rule definitions for the current instruction set.
 
 Binaries/
     Binary artifacts used by the project.
@@ -60,6 +76,9 @@ tools/microcode/
 
 tools/deployment/
     Scripts for assembling, packaging, writing, and verifying ROM/SD payloads.
+
+tools/oled/
+    OLED-related generator scripts, including the 5x7 text library generator.
 
 EEPROM Programmer/
     Arduino-based EEPROM programmer material used earlier in the project.
@@ -97,6 +116,9 @@ generated/microcode/microcode_rom_2.bin
 
 ## Deployment tools
 
+tools/deployment/
+    Scripts for assembling, packaging, writing, and verifying ROM/SD payloads.
+
 The deployment tools live here:
 
 ```text
@@ -117,9 +139,27 @@ compare_binary.py
 
 `compare_binary.py` compares two binary files byte-for-byte and reports whether they match.
 
-## Assembly examples
+## Assembly files
 
-The `ASM/` folder currently includes early demos such as Fibonacci, bounce, OLED tests, and generated rule definitions. I'll continue cleaning this area as the SD-card loader, OLED text system, and monitor code become more stable.
+The `ASM/` directory is split between boot code, reusable drivers, shared helpers, and standalone programs.
+
+Current public assembly areas include:
+
+```text
+ASM/boot/
+    SD-card ROM bootstrap programs.
+
+ASM/drivers/oled/
+    Basic OLED constants and low-level display routines.
+
+ASM/drivers/spi_sd/
+    SPI and SD-card routines used by the bootloader and future monitor work.
+
+ASM/libs/
+    Shared helper routines.
+
+ASM/programs/
+    Early demo programs.
 
 ## Architecture
 
@@ -133,4 +173,4 @@ https://fadil-1.github.io/blog/8-bit_breadboard_CPU/overview/
 
 ## License
 
-This project is released under the license included in this repository.
+This repository uses separate licenses for software, hardware design material, and documentation/images. See `LICENSE.md` and the `LICENSES/` directory for details.
