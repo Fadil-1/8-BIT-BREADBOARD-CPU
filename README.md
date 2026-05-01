@@ -1,33 +1,136 @@
-# 8-BIT-BREADBOARD-CPU
-This project is a detailed overview and repository for my 8-bit breadboard computer. Like most breadboard computers on the internet today, the design is inspired by ![Ben Eater](https://github.com/beneater)'s ![8-bit CPU series](https://www.youtube.com/playlist?list=PLowKtXNTBypGqImE405J2565dvjafglHU). My build is expanded to include various additional features such as an OLED display, SPI BUS, and 48 KB of RAM.
+# F8-BB: Expanded 8-bit Breadboard CPU
 
-![Full](https://github.com/Fadil-1/8-BIT-BREADBOARD-CPU/blob/main/images/full.jpg?raw=true)
+F8-BB is my expanded 8-bit breadboard CPU. The project is inspired by [Ben Eater's 8-bit CPU series](https://www.youtube.com/playlist?list=PLowKtXNTBypGqImE405J2565dvjafglHU), but it has grown into a larger custom machine with a 16-bit address space, and additional I/O hardware.
+
+The goal of this repository is to collect the files needed to document, program, and maintain the build.
+
+![Full build](images/full.jpg)
+
+## Project status
+
+The CPU is functional and already runs Fibonacci and display demos. The current development focuses on the SD-card loader, OLED text/monitor work, and the software structure needed for a small monitor-like environment.
 
 ## Acknowledgment
 
-A HUGE thank you to [ULF_Casper](https://github.com/DerULF1) for his 8-bit CPU ![series](https://www.youtube.com/playlist?list=PL5-Ar_CvItgaP27eT_C7MnCiubkyaEqF0). His design, especially the interrupt handling design and the PS2 module, served as a foundation for the I/O in my build. The PS2 module is so well-implemented that I integrated it into my build with no changes.
+A huge thank you to [Ben Eater](https://github.com/beneater) for the original educational CPU series that inspired this project.
 
-## Features
+I also want to thank [DerULF1 / ULF_Casper](https://github.com/DerULF1) for his 8-bit CPU [series](https://www.youtube.com/playlist?list=PL5-Ar_CvItgaP27eT_C7MnCiubkyaEqF0). The interrupt handling and PS/2 keyboard module in my build are largely derived from his design.
 
-- Programmable clock speed(Chosen from 8 different clockspeeds)
-- 16-bit program Counter
-- 16-bit stack Pointer
-- Transfer register between data and address bus (termed as the Bridge Register (BR) in codes)
-- 16-bit Output register
-- PS2 keyboard decoder
-- 16-bit 14-segment display (signed and unsigned 16-bit intergers for now)
-- SPI BUS connected to an Adafruit Bluetooth receiver and an SD card slot.
-- 128 x 64 monochrome OLED display
-- 48-K-byte of RAM(Remaining 16-k-byte address space is used for a bootloader and stack memory)
-- ALU with Shift (LSR LSR) AND, ADD, SUB, OR, XOR
-- 7 flags:: Four ALU flags: (Z-O-N-C) in writable 4-bit register; and two interrupt flags
-- 6 general purpose registers: A, B, C, D, E, G
-- 4-bit microcode step counter(With dynamic microsteps reset)
+## Hardware highlights
 
-![Breadboard Layout](https://github.com/Fadil-1/8-BIT-BREADBOARD-CPU/blob/main/images/Layout.png?raw=true)
+- 8-bit data bus
+- 16-bit memory/system bus
+- 16-bit Program Counter
+- 16-bit Stack Pointer
+- Bridge Register for transfers between the 8-bit data bus and 16-bit memory/system bus
+- 48 KB of RAM from `0x0000` through `0xBFFF`
+- Bootloader ROM window starting at `0xC000`
+- Stack initialized at `0xBFFF` and growing downward into RAM
+- Programmable clock speed with eight selectable clock rates
+- Microcoded control unit built from three M27C4002 EPROMs
+- Generated 48-bit control word split across three 16-bit ROM outputs
+- General-purpose registers A, B, C, D, and E
+- Writable flags and interrupt-related control state
+- ALU operations including ADD, SUB, AND, OR, XOR, compare, and shifts
+- 16-bit 14-segment display output
+- 128x64 OLED display
+- SPI/SD-card interface work
+- PS/2 keyboard decoder integration planned for the monitor/OS path
+
+![Breadboard layout](images/Layout.png)
+
+## Repository layout
+
+```text
+ASM/
+    Assembly programs, demos, and generated rule definitions.
+
+Binaries/
+    Binary artifacts used by the project.
+
+generated/
+    Generated files produced by project tools.
+
+generated/microcode/
+    Generated instruction documentation and microcode ROM images.
+
+tools/microcode/
+    Python microcode generator used to create rule definitions,
+    instruction documentation, and the three microcode ROM binaries.
+
+tools/deployment/
+    Scripts for assembling, packaging, writing, and verifying ROM/SD payloads.
+
+EEPROM Programmer/
+    Arduino-based EEPROM programmer material used earlier in the project.
+
+Schematics & Figures/
+    Hardware schematics, diagrams, and exported figures.
+
+datasheets/
+    Datasheets for ICs and modules used in the build.
+
+images/
+    Project photos and overview diagrams.
+```
+
+
+## Microcode and generated files
+
+The current microcode source lives here:
+
+```text
+tools/microcode/microcode_generator.py
+```
+
+It generates:
+
+```text
+ASM/ruledef.asm
+generated/microcode/instructions.md
+generated/microcode/microcode_rom_0.bin
+generated/microcode/microcode_rom_1.bin
+generated/microcode/microcode_rom_2.bin
+```
+
+`ASM/ruledef.asm` is used by CustomASM programs. The generated instruction reference and ROM binaries are placed under `generated/microcode/`.
+
+## Deployment tools
+
+The deployment tools live here:
+
+```text
+tools/deployment/
+```
+
+Current tools include:
+
+```text
+deploy_asm.py
+make_bootdesc.py
+compare_binary.py
+```
+
+`deploy_asm.py` assembles CustomASM programs and prepares either ROM payloads or SD-card payloads. It can also create BT1 multi-sector SD payloads and write/read back data from a raw SD block device.
+
+`make_bootdesc.py` creates standalone BT1 boot descriptor sectors.
+
+`compare_binary.py` compares two binary files byte-for-byte and reports whether they match.
+
+## Assembly examples
+
+The `ASM/` folder currently includes early demos such as Fibonacci, bounce, OLED tests, and generated rule definitions. I'll continue cleaning this area as the SD-card loader, OLED text system, and monitor code become more stable.
 
 ## Architecture
 
-![Modules Block Diagram](https://github.com/Fadil-1/8-BIT-BREADBOARD-CPU/blob/main/images/architecture.png?raw=true)
+![Architecture diagram](images/architecture.png)
 
-More detailed descriptions and schematics for each module can be found in the respective folders.
+More detailed explanations are available on the project blog:
+
+```text
+https://fadil-1.github.io/blog/8-bit_breadboard_CPU/overview/
+```
+
+## License
+
+This project is released under the license included in this repository.
