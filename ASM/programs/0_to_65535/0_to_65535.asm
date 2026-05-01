@@ -1,6 +1,6 @@
 ;----------------------------------------------------------------------
 ; Displays all numbers within 16-bit range[0 : 65535] on 6-digit 
-; 14-segment display (Works on microcode V1)
+; 14-segment display
 ;----------------------------------------------------------------------
 
 #include "../../ruledef.asm"

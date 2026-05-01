@@ -1,10 +1,8 @@
 ;----------------------------------------------------------------------
 ; Brute Force Code To write "Running Fibonacci @ 17.2 KHz" and
 ; "Running Fibonacci @ 2.2 MHz" on OLED display, while running the
-; Fibonacci sequence at 17.2 KHz and 2.2 MHz respectively 
-; (Works on microcode V1).
+; Fibonacci sequence at 17.2 KHz and 2.2 MHz respectively.
 ;----------------------------------------------------------------------
-
 
 #include "../../ruledef.asm"
 ; Offsets the starting address to the boot loader ROM's location (0xC000) to align jump operations.

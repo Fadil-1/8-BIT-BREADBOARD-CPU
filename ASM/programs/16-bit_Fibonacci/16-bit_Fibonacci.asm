@@ -1,6 +1,6 @@
 ;----------------------------------------------------------------------
 ; Fibonacci sequence up to max number within 16 bits.
-; range[1 : 46368] on 6-digit 14-segment display (Works on microcode V1)
+; range[1 : 46368] on 6-digit 14-segment display
 ;----------------------------------------------------------------------
 
 #include "../../ruledef.asm"

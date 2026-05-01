@@ -1,6 +1,6 @@
 ;----------------------------------------------------------------------
 ; Bounces between start and end of numbers within 16 bits.
-; range[0 : 65535] on 6-digit 14-segment display (Works on microcode V1)
+; range[0 : 65535] on 6-digit 14-segment display
 ;----------------------------------------------------------------------
 
 #include "../../ruledef.asm"
