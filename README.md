@@ -163,7 +163,7 @@ ASM/libs/
 
 ASM/programs/
     Early demo programs.
-
+```
 ## Architecture
 
 ![Architecture diagram](images/architecture.png)
