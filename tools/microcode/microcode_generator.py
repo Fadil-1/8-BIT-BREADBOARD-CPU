@@ -10,7 +10,7 @@ Generates:
   - instructions.md
 
 Original version: May 2024
-Updated: April 2026
+Updated: May 2026
 Fadil Isamotu
 """
 
@@ -33,7 +33,7 @@ ROM_SIZE = 2**INPUT_WORD_SIZE
 _CLKW  = 1 <<  15  #  Clock speed select
 _DW    = 1 <<  14  #  D Register(General purpose register 4) Write
 _BW    = 1 <<  13  #  B Register(General purpose register 2) Write
-H_cin  = 1 <<  12  #  Shift register carry in 
+H_cin  = 1 <<  12  #  Shift register carry in
 _SdE   = 1 <<  11  #  Segmented display enable
 _HC    = 1 <<  10  #  Shift register clear/reset
 ZS     = 1 <<  9   #  ALU select(0: 382 ALU; 1: 194-shift register)
@@ -55,7 +55,7 @@ _ScR   = 1 <<  28 #  Step counter reset to 0
 BRlW   = 1 <<  27 #  Transfer Register lower byte write
 _PChE  = 1 <<  26 #  Program counter upper byte enable
 _PClE  = 1 <<  25 #  Program counter lower byte enable
-_EE    = 1 <<  24 #  E Register(General purpose register 5) enable  
+_EE    = 1 <<  24 #  E Register(General purpose register 5) enable
 EW     = 1 <<  23 #  E Register(General purpose register 5) Write
 Ex2    = 1 <<  22 #  Extra 2 (Extra/Unused control line 2)
 _PSE   = 1 <<  21 #  Port selector enable
@@ -94,32 +94,32 @@ AW  =        WR_1        #  A Register(General purpose register 1) write (Decode
 
 ## 74HCT154
 ZE    = RD_3 | RD_2 | RD_1 | RD_0 #  Accumulator enable
-DE    = RD_3 | RD_2 | RD_1        #  D Register(General purpose register 4) enable 
-CE    = RD_3 | RD_2 |        RD_0 #  C Register(General purpose register 3) enable 
-AE    = RD_3 | RD_2               #  A Register(General purpose register 1) enable 
-BE    = RD_3 |        RD_1 | RD_0 #  B Register(General purpose register 2) enable 
-FE    = RD_3 |        RD_1        #  Flags Register enable 
+DE    = RD_3 | RD_2 | RD_1        #  D Register(General purpose register 4) enable
+CE    = RD_3 | RD_2 |        RD_0 #  C Register(General purpose register 3) enable
+AE    = RD_3 | RD_2               #  A Register(General purpose register 1) enable
+BE    = RD_3 |        RD_1 | RD_0 #  B Register(General purpose register 2) enable
+FE    = RD_3 |        RD_1        #  Flags Register enable
 BRhE  = RD_3 |               RD_0 #  Transfer Register Upper byte Enable
 BRlE  = RD_3                      #  Transfer Register Lower byte Enable
-SPhE  =        RD_2 | RD_1 | RD_0 #  Stack Pointer Upper byte Enable 
+SPhE  =        RD_2 | RD_1 | RD_0 #  Stack Pointer Upper byte Enable
 SPlE  =        RD_2 | RD_1        #  Stack Pointer lower byte Enable
-IE    =        RD_2 |        RD_0 #  I Register(Interrupt register) enable 
-ME    =        RD_2               #  Memory enable to 8-bit bus 
+IE    =        RD_2 |        RD_0 #  I Register(Interrupt register) enable
+ME    =        RD_2               #  Memory enable to 8-bit bus
 
 active_low_lines = _CLKW | _DW | _BW | _HC  | _FW | _OS | _OC | _ScR | \
 _PChE | _PClE | _EE | _PSE | _PSW | _SPC | _SPE | _MW | \
 _BRE | _PCE | _PCW | _PS
- 
+
 ALU_ZERO           =                0
 ALU_ACC_minus_BUS  =                Z0
 ALU_BUS_minus_ACC  =           Z1
 ALU_ADD            =           Z1 | Z0
-ALU_XOR            =      Z2       
+ALU_XOR            =      Z2
 ALU_OR             =      Z2 |      Z0
 ALU_AND            =      Z2 | Z1
 ALU_FF             =      Z2 | Z1 | Z0
-SHIFT_REG          = ZS 
-SHIFT_REG_SL       = ZS |           Z0    
+SHIFT_REG          = ZS
+SHIFT_REG_SL       = ZS |           Z0
 SHIFT_REG_SR       = ZS |      Z1
 
 ALU_MIRROR_BUS     =    FLG_MIRROR_BUS   = ZS |      Z1 | Z0 # Writes bus content in the shift register.
@@ -137,16 +137,16 @@ C_Flag   =      0b1
 
 """
 Each instruction is 8-bit(1-byte) long, and can make up instructions with up to 16 steps.
-The EPROMs are input as follows: 
+The EPROMs are input as follows:
 
 A_17  A_16  A_15  A_14  A_13  A_12  A_11  A_10  A_9  A_8     A_7  A_6  A_5  A_4  A_3  A_2  A_1  A_0
 |     |     |     |     |     |     |     |      |    |       |    |    |    |    |    |    |    |
 |                                         |      |    |       |              |    Z    O    N    C
-|                                         |      | Pending    |              |    
-|-----------------------------------------|      | Interrupt  |--------------|    
-These are the instruction bits(2^8 = up to            |            These are the         
-256 different instructions)                   Interrupt       steps bits(2^4             
-                                              Inhibit         = 16 steps max)      
+|                                         |      | Pending    |              |
+|-----------------------------------------|      | Interrupt  |--------------|
+These are the instruction bits(2^8 = up to            |            These are the
+256 different instructions)                   Interrupt       steps bits(2^4
+                                              Inhibit         = 16 steps max)
 """
 
 def al_norm(microcode):
@@ -166,18 +166,18 @@ def trim_word(EPROM_number, microcode):
 
 # Keeps track of the current instruction's address.
 adr = 0
-FETCH = [_PCE | ME | IR_in | PCC] # Fetch micro code 
+FETCH = [_PCE | ME | IR_in | PCC] # Fetch micro code
 
 def full_microcode(*steps):
     """
     Creates full microcode for a single instruction and ends it by resetting the step counter.
-    Note that, the maximum number of micro steps allowed when using this function is 15, as 
-    t_0 is automatically prepended with the fetch cycle. 
+    Note that, the maximum number of micro steps allowed when using this function is 15, as
+    t_0 is automatically prepended with the fetch cycle.
     """
     global adr
     step_list = list(steps)
     step_list.extend([0] * (15 - len(step_list)))
-    
+
     for i, step in enumerate(step_list):
         if step == 0:
             step_list[i] = _ScR
@@ -191,7 +191,7 @@ recycling_address = []
 
 def add_microcode(micro_operations, name):
     '''
-    Updates the instructions_without_flags dictionary 
+    Updates the instructions_without_flags dictionary
     with the current address as the key, and (micro_operations, name) as the value.
     '''
     instructions_without_flags[adr] = micro_operations, name
@@ -208,17 +208,17 @@ $   Register
 ABCD = ['A' ,'B' ,'C' ,'D']
 
 # All registers' write lines
-write_to_reg = {'A': AW, 
-                'B': _BW, 
-                'C':CW, 
+write_to_reg = {'A': AW,
+                'B': _BW,
+                'C':CW,
                 'D':_DW,
                 'E': EW,
                 'I': IW}
 
 # All registers enable lines
-enable_reg = {'A': AE, 
-              'B': BE, 
-              'C': CE, 
+enable_reg = {'A': AE,
+              'B': BE,
+              'C': CE,
               'D': DE,
               'E': _EE,
               'I': IE}
@@ -246,12 +246,12 @@ instructions_without_flags[adr] =([ ALU_ZERO | ZW | _OC,                        
                                     f'RST')
 
 #################
-### Set carry ### 
+### Set carry ###
 #################
 add_microcode(full_microcode(FLG_STC | _FW), f'STC')
 
 ########################
-## Reset/Clear carry ### 
+## Reset/Clear carry ###
 ########################
 add_microcode(full_microcode(FLG_CLC | _FW), f'CLC')
 
@@ -259,36 +259,36 @@ add_microcode(full_microcode(FLG_CLC | _FW), f'CLC')
 ### IMMEDIATE ###
 #################
 for dest in ABCD:
-    add_microcode(full_microcode(_PCE | ME | write_to_reg[dest] | PCC), 
-                                 f'MOV ${dest}, #') 
+    add_microcode(full_microcode(_PCE | ME | write_to_reg[dest] | PCC),
+                                 f'MOV ${dest}, #')
     add_microcode(full_microcode(enable_reg[dest] | ALU_MIRROR_BUS,
                                  SHIFT_REG | ZW,
-                                _PCE | ME | ALU_ADD | ZW | _FW,  
+                                _PCE | ME | ALU_ADD | ZW | _FW,
                                 write_to_reg[dest] | ZE | PCC),
-                                f'ADD ${dest}, #') 
+                                f'ADD ${dest}, #')
     add_microcode(full_microcode(enable_reg[dest] | ALU_MIRROR_BUS,
                                  SHIFT_REG | ZW,
                                  _PCE | ME | ALU_ACC_minus_BUS | ZW | _FW,
-                                 write_to_reg[dest] | ZE | PCC), 
+                                 write_to_reg[dest] | ZE | PCC),
                                  f'SUB ${dest}, #')
     add_microcode(full_microcode(enable_reg[dest] | ALU_MIRROR_BUS,
                                  SHIFT_REG | ZW,
-                                 _PCE | ME | ALU_AND | ZW | _FW,  
-                                 write_to_reg[dest] | ZE | PCC), 
+                                 _PCE | ME | ALU_AND | ZW | _FW,
+                                 write_to_reg[dest] | ZE | PCC),
                                  f'AND ${dest}, #')
     add_microcode(full_microcode(enable_reg[dest] | ALU_MIRROR_BUS,
                                  SHIFT_REG | ZW,
-                                 _PCE | ME | ALU_OR | ZW | _FW,  
-                                 write_to_reg[dest] | ZE | PCC), 
+                                 _PCE | ME | ALU_OR | ZW | _FW,
+                                 write_to_reg[dest] | ZE | PCC),
                                  f'OR ${dest}, #')
     add_microcode(full_microcode(enable_reg[dest] | ALU_MIRROR_BUS,
                                  SHIFT_REG | ZW,
-                                 _PCE | ME | ALU_XOR | ZW | _FW,  
-                                 write_to_reg[dest] | ZE | PCC), 
+                                 _PCE | ME | ALU_XOR | ZW | _FW,
+                                 write_to_reg[dest] | ZE | PCC),
                                  f'XOR ${dest}, #')
     add_microcode(full_microcode(enable_reg[dest] | ALU_MIRROR_BUS,
                                  SHIFT_REG | ZW,
-                                 _PCE | ME | ALU_ACC_minus_BUS | _FW | PCC), 
+                                 _PCE | ME | ALU_ACC_minus_BUS | _FW | PCC),
                                  f'CMP ${dest}, #')
 
 ## IMMEDIATE WITH E
@@ -297,32 +297,32 @@ add_microcode(full_microcode(_PCE | ME | write_to_reg[dest] | PCC),
 
 add_microcode(full_microcode(enable_reg['E'] | ALU_MIRROR_BUS,
                              SHIFT_REG | ZW,
-                             _PCE | ME | ALU_ADD | ZW | _FW,  
+                             _PCE | ME | ALU_ADD | ZW | _FW,
                              write_to_reg['E'] | ZE | PCC),
-                             f'ADD $E, #') 
+                             f'ADD $E, #')
 
 add_microcode(full_microcode(enable_reg['E'] | ALU_MIRROR_BUS,
                              SHIFT_REG | ZW,
                              _PCE | ME | ALU_ACC_minus_BUS | ZW | _FW,
-                             write_to_reg['E'] | ZE | PCC), 
+                             write_to_reg['E'] | ZE | PCC),
                              f'SUB $E, #')
 
 add_microcode(full_microcode(enable_reg['E'] | ALU_MIRROR_BUS,
                              SHIFT_REG | ZW,
-                             _PCE | ME | ALU_ACC_minus_BUS | _FW | PCC), 
-                             f'CMP $E, #') 
+                             _PCE | ME | ALU_ACC_minus_BUS | _FW | PCC),
+                             f'CMP $E, #')
 
 ## DIRECT REGISTER WITH E
 for reg in ABCD:
-    add_microcode(full_microcode(write_to_reg[reg] | enable_reg['E']), 
-                                 f'MOV ${reg}, $E')   
-    
-    add_microcode(full_microcode(write_to_reg['E'] | enable_reg[reg]), 
+    add_microcode(full_microcode(write_to_reg[reg] | enable_reg['E']),
+                                 f'MOV ${reg}, $E')
+
+    add_microcode(full_microcode(write_to_reg['E'] | enable_reg[reg]),
                                  f'MOV $E, ${reg}')
-    
+
     add_microcode(full_microcode(enable_reg['E'] | ALU_MIRROR_BUS,
                                  SHIFT_REG | ZW,
-                                 enable_reg[reg] | ALU_ACC_minus_BUS | _FW), 
+                                 enable_reg[reg] | ALU_ACC_minus_BUS | _FW),
                                  f'CMP $E, {reg}')
 
 
@@ -332,10 +332,10 @@ for reg in ABCD:
 
 # CLK IMMEDIATE
 add_microcode(full_microcode(_PCE | ME | _CLKW, PCC), # Select I/O from RAM content.
-                            f'MOV $CLK, #') 
+                            f'MOV $CLK, #')
 
 # CLK DIRECT REGISTER
-add_microcode(full_microcode(_CLKW | enable_reg['E']), 
+add_microcode(full_microcode(_CLKW | enable_reg['E']),
                                  f'MOV $CLK, $E')
 
 #######################
@@ -346,37 +346,37 @@ for dest in ABCD:
         if dest == src:
             continue
 
-        add_microcode(full_microcode(write_to_reg[dest] | enable_reg[src]), 
+        add_microcode(full_microcode(write_to_reg[dest] | enable_reg[src]),
                                     f'MOV ${dest}, ${src}')
 
         add_microcode(full_microcode(enable_reg[dest] | ALU_MIRROR_BUS,
                                      SHIFT_REG | ZW,
-                                     enable_reg[src] | ALU_ADD |_FW | ZW,  
-                                     write_to_reg[dest] | ZE), 
+                                     enable_reg[src] | ALU_ADD |_FW | ZW,
+                                     write_to_reg[dest] | ZE),
                                     f'ADD ${dest}, ${src}')
         add_microcode(full_microcode(enable_reg[dest] | ALU_MIRROR_BUS,
                                      SHIFT_REG | ZW,
-                                     enable_reg[src] | ALU_ACC_minus_BUS | _FW | ZW,  
-                                     write_to_reg[dest] | ZE), 
+                                     enable_reg[src] | ALU_ACC_minus_BUS | _FW | ZW,
+                                     write_to_reg[dest] | ZE),
                                     f'SUB ${dest}, ${src}')
         add_microcode(full_microcode(enable_reg[dest] | ALU_MIRROR_BUS,
                                      SHIFT_REG | ZW,
-                                     enable_reg[src] | ALU_AND |_FW | ZW,  
-                                     write_to_reg[dest] | ZE), 
+                                     enable_reg[src] | ALU_AND |_FW | ZW,
+                                     write_to_reg[dest] | ZE),
                                     f'AND ${dest}, ${src}')
         add_microcode(full_microcode(enable_reg[dest] | ALU_MIRROR_BUS,
                                      SHIFT_REG | ZW,
-                                     enable_reg[src] | ALU_OR |_FW | ZW,  
-                                     write_to_reg[dest] | ZE), 
+                                     enable_reg[src] | ALU_OR |_FW | ZW,
+                                     write_to_reg[dest] | ZE),
                                     f'OR ${dest}, ${src}')
         add_microcode(full_microcode(enable_reg[dest] | ALU_MIRROR_BUS,
                                      SHIFT_REG | ZW,
-                                     enable_reg[src] | ALU_XOR |_FW | ZW,  
-                                     write_to_reg[dest] | ZE), 
-                                    f'XOR ${dest}, ${src}')      
+                                     enable_reg[src] | ALU_XOR |_FW | ZW,
+                                     write_to_reg[dest] | ZE),
+                                    f'XOR ${dest}, ${src}')
         add_microcode(full_microcode(enable_reg[dest] | ALU_MIRROR_BUS,
                                      SHIFT_REG | ZW,
-                                     enable_reg[src] | ALU_ACC_minus_BUS |_FW), 
+                                     enable_reg[src] | ALU_ACC_minus_BUS |_FW),
                                     f'CMP ${dest}, ${src}')
 
 #########################
@@ -387,12 +387,12 @@ for dest in ABCD:
         # Read
         add_microcode(full_microcode( CE | BRlW,
                                       DE | BRhW,
-                                     _BRE | ME | write_to_reg[dest]), 
+                                     _BRE | ME | write_to_reg[dest]),
                                     f'MOV ${dest}, [$CD]')
         # Write
         add_microcode(full_microcode( CE | BRlW,
                                       DE | BRhW,
-                                     _BRE | _MW | enable_reg[dest]), 
+                                     _BRE | _MW | enable_reg[dest]),
                                     f'MOV [$CD], ${dest}')
 
         add_microcode(full_microcode(CE | BRlW,
@@ -402,7 +402,7 @@ for dest in ABCD:
                                      _BRE | ME | ALU_ADD | ZW | _FW,
                                      write_to_reg[dest] | ZE ),
                                     f'ADD ${dest}, [$CD]')
-        
+
         add_microcode(full_microcode(CE | BRlW,
                                      DE | BRhW,
                                      enable_reg[dest] | ALU_MIRROR_BUS,
@@ -410,7 +410,7 @@ for dest in ABCD:
                                      _BRE | ME | ALU_ACC_minus_BUS | ZW | _FW,
                                      write_to_reg[dest] | ZE ),
                                     f'SUB ${dest}, [$CD]')
-        
+
         add_microcode(full_microcode(CE | BRlW,
                                      DE | BRhW,
                                      enable_reg[dest] | ALU_MIRROR_BUS,
@@ -418,7 +418,7 @@ for dest in ABCD:
                                      _BRE | ME | ALU_AND | ZW | _FW,
                                      write_to_reg[dest] | ZE ),
                                     f'AND ${dest}, [$CD]')
-        
+
         add_microcode(full_microcode(CE | BRlW,
                                      DE | BRhW,
                                      enable_reg[dest] | ALU_MIRROR_BUS,
@@ -426,7 +426,7 @@ for dest in ABCD:
                                      _BRE | ME | ALU_OR | ZW | _FW,
                                      write_to_reg[dest] | ZE ),
                                     f'OR ${dest}, [$CD]')
-        
+
         add_microcode(full_microcode(CE | BRlW,
                                      DE | BRhW,
                                      enable_reg[dest] | ALU_MIRROR_BUS,
@@ -434,7 +434,7 @@ for dest in ABCD:
                                      _BRE | ME | ALU_XOR | ZW | _FW,
                                      write_to_reg[dest] | ZE ),
                                     f'XOR ${dest}, [$CD]')
-        
+
         add_microcode(full_microcode(CE | BRlW,
                                      DE | BRhW,
                                      enable_reg[dest] | ALU_MIRROR_BUS,
@@ -447,54 +447,54 @@ for dest in ABCD:
 #########################
 for dest in ABCD:
     add_microcode(full_microcode(_PCE| ME | BRlW | PCC,
-                                 _PCE | ME | BRhW, 
-                                 _BRE | ME | write_to_reg[dest] | PCC), 
+                                 _PCE | ME | BRhW,
+                                 _BRE | ME | write_to_reg[dest] | PCC),
                                 f'MOV ${dest}, [@]')
     add_microcode(full_microcode(_PCE | ME | BRlW | PCC,
-                                _PCE | ME | BRhW, 
+                                _PCE | ME | BRhW,
                                 _BRE | _MW | enable_reg[dest] | PCC),
                                 f'MOV [@], ${dest}')
     add_microcode(full_microcode(_PCE | ME | BRlW | PCC,
-                                _PCE | ME | BRhW, 
+                                _PCE | ME | BRhW,
                                 enable_reg[dest] | ALU_MIRROR_BUS | PCC,
                                 SHIFT_REG | ZW,
                                 _BRE | ME | ALU_ADD | ZW | _FW,
                                 write_to_reg[dest] | ZE ),
                                 f'ADD ${dest}, [@]')
     add_microcode(full_microcode(_PCE | ME | BRlW | PCC,
-                                _PCE | ME | BRhW, 
+                                _PCE | ME | BRhW,
                                 enable_reg[dest] | ALU_MIRROR_BUS | PCC,
                                 SHIFT_REG | ZW,
                                 _BRE | ME | ALU_ACC_minus_BUS | ZW | _FW,
-                                write_to_reg[dest] | ZE ), 
+                                write_to_reg[dest] | ZE ),
                                 f'SUB ${dest}, [@]')
     add_microcode(full_microcode(_PCE | ME | BRlW | PCC,
-                                _PCE | ME | BRhW, 
+                                _PCE | ME | BRhW,
                                 enable_reg[dest] | ALU_MIRROR_BUS | PCC,
                                 SHIFT_REG | ZW,
                                 _BRE | ME | ALU_AND | ZW | _FW,
-                                write_to_reg[dest] | ZE ), 
+                                write_to_reg[dest] | ZE ),
                                 f'AND ${dest}, [@]')
     add_microcode(full_microcode(_PCE | ME | BRlW | PCC,
-                                _PCE | ME | BRhW, 
+                                _PCE | ME | BRhW,
                                 enable_reg[dest] | ALU_MIRROR_BUS | PCC,
                                 SHIFT_REG | ZW,
                                 _BRE | ME | ALU_OR | ZW | _FW,
-                                write_to_reg[dest] | ZE ), 
+                                write_to_reg[dest] | ZE ),
                                 f'OR ${dest}, [@]')
     add_microcode(full_microcode(_PCE | ME | BRlW | PCC,
-                                _PCE | ME | BRhW, 
+                                _PCE | ME | BRhW,
                                 enable_reg[dest] | ALU_MIRROR_BUS | PCC,
                                 SHIFT_REG | ZW,
                                 _BRE | ME | ALU_XOR | ZW | _FW,
-                                write_to_reg[dest] | ZE ), 
+                                write_to_reg[dest] | ZE ),
                                 f'XOR ${dest}, [@]')
     add_microcode(full_microcode(_PCE | ME | BRlW | PCC,
-                                _PCE | ME | BRhW, 
+                                _PCE | ME | BRhW,
                                 enable_reg[dest] | ALU_MIRROR_BUS | PCC,
                                 SHIFT_REG | ZW,
                                 _BRE | ME | ALU_ACC_minus_BUS | _FW),
-                                f'CMP ${dest}, [@]') 
+                                f'CMP ${dest}, [@]')
 
 ###########
 ### I/O ###
@@ -503,36 +503,36 @@ for dest in ABCD:
 ## SEGMENTED DISPLAY
 
 # Lower byte of a number
-add_microcode(full_microcode(enable_reg['A'] | SdT), 
+add_microcode(full_microcode(enable_reg['A'] | SdT),
                                 f'SDL $A')
-add_microcode(full_microcode(enable_reg['B'] | SdT), 
+add_microcode(full_microcode(enable_reg['B'] | SdT),
                                 f'SDL $B')
 
 # Higher byte of a number
-add_microcode(full_microcode(enable_reg['A'] | SdW), 
+add_microcode(full_microcode(enable_reg['A'] | SdW),
                                 f'SDH $A')
-add_microcode(full_microcode(enable_reg['B'] | SdW), 
+add_microcode(full_microcode(enable_reg['B'] | SdW),
                                 f'SDH $B')
 
 ## Port Selector
-# Output: Write content in $A to port selected from memory content.  
-add_microcode(full_microcode(_PCE | ME | _PS | PCC, 
-                             AE | _PSW),            
+# Output: Write content in $A to port selected from memory content.
+add_microcode(full_microcode(_PCE | ME | _PS | PCC,
+                             AE | _PSW),
                             f'OUT #, $A')
 
-# Input: Write content in port from memory content to $A.  
-add_microcode(full_microcode(_PCE | ME | _PS | PCC, 
-                             AW | _PSE),            
+# Input: Write content in port from memory content to $A.
+add_microcode(full_microcode(_PCE | ME | _PS | PCC,
+                             AW | _PSE),
                             f'INP $A, #')
 
 # Output: Write content of $A to port in $B.
-add_microcode(full_microcode(BE | _PS,         
-                             AE | _PSW),       
+add_microcode(full_microcode(BE | _PS,
+                             AE | _PSW),
                             f'OUT $B, $A')
 
 # INPUT: Write content from port in $B to $A.
-add_microcode(full_microcode(BE | _PS,         
-                             AW | _PSE),       
+add_microcode(full_microcode(BE | _PS,
+                             AW | _PSE),
                             f'INP $A, $B')
 
 ## OLED DISPLAY
@@ -540,7 +540,7 @@ add_microcode(full_microcode(BE | _PS,
 add_microcode(full_microcode(_OC,_OC,_OC,_OC,_OC,_OC), f'OLR')
 
 # Data immediate
-add_microcode(full_microcode(_PCE | ME, 
+add_microcode(full_microcode(_PCE | ME,
                              OE | _PCE | ME | PCC),
                             f'OLD #')
 
@@ -580,46 +580,46 @@ for src in ABCD:
                                  write_to_reg[src] | ZE),              # Writes Acc to destination register
                                  f'LSL ${src}')
 # Address
-add_microcode(full_microcode(_PCE | ME | BRlW | PCC,              
-                             _PCE | ME | BRhW,                    
-                             _BRE | ME | ALU_MIRROR_BUS | PCC,    
-                             SHIFT_REG_SL | _FW | _BRE | ME,                  
-                             SHIFT_REG | ZW,                      
-                             _BRE | ZE | _MW ),                   
+add_microcode(full_microcode(_PCE | ME | BRlW | PCC,
+                             _PCE | ME | BRhW,
+                             _BRE | ME | ALU_MIRROR_BUS | PCC,
+                             SHIFT_REG_SL | _FW | _BRE | ME,
+                             SHIFT_REG | ZW,
+                             _BRE | ZE | _MW ),
                             'LSL [@]')
 # Indirect
-add_microcode(full_microcode( CE | BRlW,                          
-                              DE | BRhW,                          
-                             _BRE | ME | ALU_MIRROR_BUS,          
-                              SHIFT_REG_SL | _FW | _BRE | ME,                 
-                              SHIFT_REG | ZW,                     
-                             _BRE | ZE | _MW ),                   
+add_microcode(full_microcode( CE | BRlW,
+                              DE | BRhW,
+                             _BRE | ME | ALU_MIRROR_BUS,
+                              SHIFT_REG_SL | _FW | _BRE | ME,
+                              SHIFT_REG | ZW,
+                             _BRE | ZE | _MW ),
                             'LSL [$CD]')
 
-### Right Shift 
+### Right Shift
 
 ## Register
 for src in ABCD:
-    add_microcode(full_microcode(enable_reg[src] | ALU_MIRROR_BUS, 
-                                 SHIFT_REG_SR | _FW | enable_reg[src],               
-                                 SHIFT_REG | ZW,                   
-                                 write_to_reg[src] | ZE),          
+    add_microcode(full_microcode(enable_reg[src] | ALU_MIRROR_BUS,
+                                 SHIFT_REG_SR | _FW | enable_reg[src],
+                                 SHIFT_REG | ZW,
+                                 write_to_reg[src] | ZE),
                                  f'LSR ${src}')
 ## Address
-add_microcode(full_microcode(_PCE | ME | BRlW | PCC,                
-                             _PCE | ME | BRhW,                      
-                             _BRE | ME | ALU_MIRROR_BUS | PCC,      
-                             SHIFT_REG_SR | _FW | _BRE | ME,                    
-                             SHIFT_REG | ZW,                        
-                             _BRE | ZE | _MW ),                     
+add_microcode(full_microcode(_PCE | ME | BRlW | PCC,
+                             _PCE | ME | BRhW,
+                             _BRE | ME | ALU_MIRROR_BUS | PCC,
+                             SHIFT_REG_SR | _FW | _BRE | ME,
+                             SHIFT_REG | ZW,
+                             _BRE | ZE | _MW ),
                             'LSR [@]')
 ## Indirect
-add_microcode(full_microcode( CE | BRlW,                            
-                              DE | BRhW,                            
-                             _BRE | ME | ALU_MIRROR_BUS,            
-                              SHIFT_REG_SR | _FW | _BRE | ME,                   
-                              SHIFT_REG | ZW,                       
-                             _BRE | ZE | _MW ),                     
+add_microcode(full_microcode( CE | BRlW,
+                              DE | BRhW,
+                             _BRE | ME | ALU_MIRROR_BUS,
+                              SHIFT_REG_SR | _FW | _BRE | ME,
+                              SHIFT_REG | ZW,
+                             _BRE | ZE | _MW ),
                             'LSR [$CD]')
 
 #################
@@ -634,15 +634,15 @@ for reg in ABCD:
     add_microcode(full_microcode(_SPC,
                                  write_to_reg[reg] | _SPE | ME),
                                  f'PUL ${reg}')
-# Flags   
+# Flags
 add_microcode(full_microcode(FE | _SPE | _MW | SPD,
                              _SPC | SPD),
                              f'PSF')
 
 
-add_microcode(full_microcode(_SPC | ALU_ZERO | ZW,       
-                             _SPE | ME | FLG_MIRROR_BUS | _FW),  
-                             f'PLF')              
+add_microcode(full_microcode(_SPC | ALU_ZERO | ZW,
+                             _SPE | ME | FLG_MIRROR_BUS | _FW),
+                             f'PLF')
 
 #####################
 ### STACK POINTER ###
@@ -686,13 +686,13 @@ add_microcode(full_microcode(CE | BRlW,
                              f'JSR [$CD]')
 
 ##############################
-### RETURN FROM SUBROUTINE ### 
+### RETURN FROM SUBROUTINE ###
 ##############################
 add_microcode(full_microcode(_SPC,
                             BRhW | _SPE | ME,
                             _SPC,
                             BRlW | _SPE | ME,
-                            _BRE | _PCW ), 
+                            _BRE | _PCW ),
                             f'RTS')
 
 #########################
@@ -750,33 +750,33 @@ add_microcode(full_microcode(),    # Write content of $A to selected I/O
                             f'CII')
 
 # INTERRUPT HANDLER
-add_microcode(full_microcode(TI | FE | _SPE | _MW | ALU_FF | ZW | SPD,                             
-                              ZE | SHIFT_REG_SL | BRhW | _SPC | SPD,                             
-                              _PClE | _SPE | _MW | SHIFT_REG | ZW | SPD,                            
-                              ZE | BRlW | _SPC | SPD,  
-                              _PChE | _SPE | _MW | ALU_FF | ZW | SPD, 
-                              _BRE | ME | ALU_AND | ZW | _SPC | SPD,   
-                              ZE | _SPE | _MW | SPD,                                  
-                              ALU_FF | ZW,                   
-                              ZE | BRlW,                     
-                              _BRE | ME | ALU_AND | ZW,      
-                              ZE | BRhW,                     
-                              _SPE | ME | BRlW,              
-                              _BRE | _PCW | FLG_CLC | _FW),                  
+add_microcode(full_microcode(TI | FE | _SPE | _MW | ALU_FF | ZW | SPD,
+                              ZE | SHIFT_REG_SL | BRhW | _SPC | SPD,
+                              _PClE | _SPE | _MW | SHIFT_REG | ZW | SPD,
+                              ZE | BRlW | _SPC | SPD,
+                              _PChE | _SPE | _MW | ALU_FF | ZW | SPD,
+                              _BRE | ME | ALU_AND | ZW | _SPC | SPD,
+                              ZE | _SPE | _MW | SPD,
+                              ALU_FF | ZW,
+                              ZE | BRlW,
+                              _BRE | ME | ALU_AND | ZW,
+                              ZE | BRhW,
+                              _SPE | ME | BRlW,
+                              _BRE | _PCW | FLG_CLC | _FW),
                               "ITR")
 interrupt_handler_address = adr
 
-# RETURN FROM INTERRUPT  
+# RETURN FROM INTERRUPT
 add_microcode(full_microcode( _SPC,
                               BRhW | _SPE | ME,
                               _SPC,
                               BRlW | _SPE | ME,
                               _BRE | _PCW | _SPC,
-                              _SPE | ME | FLG_MIRROR_BUS | _FW | TI), 
+                              _SPE | ME | FLG_MIRROR_BUS | _FW | TI),
                               f'RTI')
 
 #############
-### NO OP ### 
+### NO OP ###
 #############
 add_microcode(full_microcode(), f'NOP')
 
@@ -786,17 +786,17 @@ add_microcode(full_microcode(), f'NOP')
 add_microcode(full_microcode(HLT), f'HLT')
 
 # Fill Unused instructions with NO OPS:
-number_of_fillers = 0 
+number_of_fillers = 0
 while len(instructions_without_flags) < 256:
     number_of_fillers += 1
     add_microcode(full_microcode(), f'FILLER_{number_of_fillers}')
 
-# Key = The instruction string/name; Value = instruction 
+# Key = The instruction string/name; Value = instruction
 instructions_dict = {y[1]: x for x, y in instructions_without_flags.items()}
-# Key = The instruction; Value = control word 
+# Key = The instruction; Value = control word
 microcode_dict = {x : y[0] for x, y in instructions_without_flags.items()}
 
-if len(instructions_without_flags) > 256: 
+if len(instructions_without_flags) > 256:
     print("Instructions exceed 256")
     exit()
 
@@ -817,34 +817,34 @@ CII  = instructions_dict['CII']
 microcode = [deepcopy(microcode_dict) for x in range ((C_Flag  | Z_Flag | N_Flag  | O_Flag  | II_Flag | IRQ_Flag) + 1)]
 
 # CONDITIONAL JUMPS MICRO-OPERATIONS
-# The interrupt code starts at address 16(10000). Register I is hardwired to 16. 
+# The interrupt code starts at address 16(10000). Register I is hardwired to 16.
 jump_to_interrupt_handler = [ALU_ZERO | ZW | IW, # Writes 0 into the accumulator, and makes sure the hard wired value on the interrupt register is written.
                           ZE | BRhW,          # Writes 0 into upper byte of bridge.
                           IE | BRlW,          # Writes interrupt address into lower byte of bridge.
-                          _BRE | _PCW,        # Writes location of interrupt code in PC. 
+                          _BRE | _PCW,        # Writes location of interrupt code in PC.
                           _ScR]               # End the microcode by resetting the step counter.
 
-# JMP @ instruction 
+# JMP @ instruction
 conditional_jump = FETCH + [_PCE | ME | BRlW | PCC, # Writes RAM content at PC address to lower byte of bridge, increment PC by 1.
                     _PCE | ME | BRhW,       # Writes RAM content at PC address + 1 to upper byte of bridge.
                     _BRE | _PCW,            # Writes content of bridge into PC. # End the microcode by resetting the step counter.
                     _ScR]                   # End the microcode by resetting the step counter.
 
 # Interrupt Inhibit
-set_II = clear_II = FETCH + [TI, 
+set_II = clear_II = FETCH + [TI,
                             _ScR]
 
 def cond_jmp(micro_operations, jp=conditional_jump.copy()):
     """
     Dynamically converts an unconditional instruction to a conditional instruction.
-    Moves the position of the step counter clear signal and uses the jump argument 
-    as the specific jump code. 
+    Moves the position of the step counter clear signal and uses the jump argument
+    as the specific jump code.
     """
     jump = jp.copy()
     if jump != jump_to_interrupt_handler:
         micro_operations[:] = jump + (16-len(jump))*[0] # Fill the rest of the list with zeros till it reaches length 16.
     else:
-        start = micro_operations.index(_ScR) 
+        start = micro_operations.index(_ScR)
         end = start + len(jump)
         if end <= 16:
             micro_operations[start:end] = jump
@@ -871,15 +871,15 @@ def generate_microcode():
     # For every possible combination of flags
     for flags in range((II_Flag | IRQ_Flag | Z_Flag | O_Flag | N_Flag | C_Flag) + 1):
         '''
-        ANDing with the current flag combination basically defines 
+        ANDing with the current flag combination basically defines
         which flag is active in this value/iteration of the loop.
         EX: If loop is at 010010, IRQ and N would be HIGH, from teh set of ANDs below.
         '''
-        II  = flags & II_Flag 
+        II  = flags & II_Flag
         IRQ = flags & IRQ_Flag
-        
+
         try:
-            # If an interrupt service is requested while the interrupt 
+            # If an interrupt service is requested while the interrupt
             # inhibit signal is asserted; ignore the request.
             if IRQ and II:
                 apply_conditional_branching(flags)
@@ -888,21 +888,21 @@ def generate_microcode():
                 apply_conditional_branching(flags)
                 # Loop into all the ocpodes for the current flags combination
                 for instruction, micro_operations in microcode[flags].items():
-                    # Ignore reset and interrupt codes 
-                    if instruction == 0 or instruction == interrupt_handler_address: 
+                    # Ignore reset and interrupt codes
+                    if instruction == 0 or instruction == interrupt_handler_address:
                         continue
                     # Ignore filler instructions if any.
                     if number_of_fillers and instruction in range((256 - number_of_fillers), 256):
                         continue
                     # Add the micro-operations to jump to the interrupt code.
                     cond_jmp(micro_operations, jp=jump_to_interrupt_handler)
-            
+
             elif II:
-                cond_jmp(microcode[flags][CII], clear_II) 
+                cond_jmp(microcode[flags][CII], clear_II)
                 apply_conditional_branching(flags)
 
             else:
-                cond_jmp(microcode[flags][SII], set_II) 
+                cond_jmp(microcode[flags][SII], set_II)
                 apply_conditional_branching(flags)
 
         except Exception as e:
@@ -915,7 +915,7 @@ generate_microcode()
 def assign_rom(microcode_list, rom_number):
     """
     Normalizes control line activation and shift bits to their appropriate ROM.
-    Takes a microcode list of dictionaries. 
+    Takes a microcode list of dictionaries.
     """
     EPROM = deepcopy(microcode_list)
     # For every dictionary in the list of dictionaries
@@ -933,11 +933,11 @@ roms = [assign_rom(microcode, 0), assign_rom(microcode, 1), assign_rom(microcode
 def generate_microcode_rom():
     """
     Generates and exports the final binary files for the microcode EPROMs.
-    Iterates through the entire physical address space (ROM_SIZE) for each ROM and 
-    decodes the address bits back into the corresponding instruction, flags, and 
-    execution step. Retrieves the specific 16-bit control word for that state and 
-    stores it in a pre-allocated memory buffer (bytearray) in little-endian format. 
-    Optimizes performance by writing the entire ROM to disk in a single I/O 
+    Iterates through the entire physical address space (ROM_SIZE) for each ROM and
+    decodes the address bits back into the corresponding instruction, flags, and
+    execution step. Retrieves the specific 16-bit control word for that state and
+    stores it in a pre-allocated memory buffer (bytearray) in little-endian format.
+    Optimizes performance by writing the entire ROM to disk in a single I/O
     operation rather than thousands of individual byte writes.
     """
     for i, rom in enumerate(roms):
@@ -945,8 +945,8 @@ def generate_microcode_rom():
         buffer = bytearray(ROM_SIZE * 2)
 
         for address in range(ROM_SIZE):
-            instruction = (address & 0b111111110000000000) >> 10 
-            flags_h = (address & 0b00000001100000000) >> 4 
+            instruction = (address & 0b111111110000000000) >> 10
+            flags_h = (address & 0b00000001100000000) >> 4
             flags_l = address & 0b1111
             flags   = flags_h | flags_l
             step  = (address & 0b000000000011110000) >> 4
@@ -960,14 +960,19 @@ def generate_microcode_rom():
         rom_path = GENERATED_MICROCODE_DIR / f"microcode_rom_{i}.bin"
         with open(rom_path, 'wb') as file:
             file.write(buffer)
-            
+
     print('\nDone!')
 
 
-def generate_ruledef(use_new_le=False):
+def generate_ruledef(customasm_version="current"):
     '''
-    Generates a ruledef.asm directive file for Customasm in Little Endian.
-    Toggle use_new_le=True to use newer @le layout syntax.
+    Generates a ruledef.asm directive file for Customasm.
+
+    customasm_version switches:
+    - "legacy": Uses '@ le(address)' for older CustomASM versions.
+    - "intermediate": Uses '@le(address)' for intermediate CustomASM versions.
+    - "current": Default. Uses explicit byte slicing and dual rules (little-endian
+       default, big-endian with @be) for CustomASM v0.14.1+.
     '''
     RULEDEF_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
 
@@ -979,11 +984,6 @@ def generate_ruledef(use_new_le=False):
             end = ''
             formatted_parts = []
 
-            if '@' in instruction:
-                end = '@le(address)' if use_new_le else '@ le(address)'
-            elif '#' in instruction:
-                end = '@ im'
-
             for z in parts:
                 if '@' in z:
                     formatted_parts.append(z.replace('@', 'address: u16').replace('[', '{').replace(']', '}'))
@@ -993,10 +993,29 @@ def generate_ruledef(use_new_le=False):
                     formatted_parts.append(z)
 
             rebuilt_instruction = " ".join(formatted_parts)
-            ruledef.writelines(f"    {rebuilt_instruction.ljust(25)} => 0x{i:02x} {end}\n")
-            
-        ruledef.writelines('}\n')
 
+            if '@' in instruction:
+                if customasm_version == "legacy":
+                    end = '@ le(address)'
+                    ruledef.writelines(f"    {rebuilt_instruction.ljust(25)} => 0x{i:02x} {end}\n")
+                elif customasm_version == "intermediate":
+                    end = '@le(address)'
+                    ruledef.writelines(f"    {rebuilt_instruction.ljust(25)} => 0x{i:02x} {end}\n")
+                elif customasm_version == "current":
+                    end_le = '@ address[7:0] @ address[15:8]'
+                    ruledef.writelines(f"    {rebuilt_instruction.ljust(25)} => 0x{i:02x} {end_le}\n")
+                    rebuilt_instruction_be = rebuilt_instruction + ' @be'
+                    end_be = '@ address[15:8] @ address[7:0]'
+                    ruledef.writelines(f"    {rebuilt_instruction_be.ljust(25)} => 0x{i:02x} {end_be}\n")
+            else:
+                if '#' in instruction:
+                    end = '@ im'
+                    ruledef.writelines(f"    {rebuilt_instruction.ljust(25)} => 0x{i:02x} {end}\n")
+                else:
+                    ruledef.writelines(f"    {rebuilt_instruction.ljust(25)} => 0x{i:02x}\n")
+
+        ruledef.writelines('}\n')
+    print(f"Ruledef file generated → {RULEDEF_OUTPUT}")
 
 def generate_full_instruction_markdown(flags=0, output_file=INSTRUCTIONS_OUTPUT):
     """
@@ -1071,6 +1090,10 @@ def generate_full_instruction_markdown(flags=0, output_file=INSTRUCTIONS_OUTPUT)
     return markdown
 
 # Make sure microcode is generated first
-generate_ruledef() # Toggle use_new_le=True here to use "@le" instead of the default "le"
-generate_full_instruction_markdown(flags=0)
-generate_microcode_rom()
+
+# Set the customasm_version argument based on your installed customASM version. Use "current" for CustomASM v0.14.1 and newer versions
+# (defaults to little-endian, use @be for big-endian), "intermediate" if your version requires the unspaced @le(address) syntax,
+# or "legacy" for older versions that use the spaced @ le(address) syntax.
+generate_ruledef(customasm_version="current")
+#generate_full_instruction_markdown(flags=0)
+#generate_microcode_rom()
