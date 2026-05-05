@@ -17,6 +17,10 @@ Fadil Isamotu
 from __future__ import annotations
 
 import argparse
+import ctypes
+import ctypes.wintypes as wintypes
+import os
+from contextlib import nullcontext
 import math
 import pathlib
 import re
@@ -238,18 +242,280 @@ def build_bt1_descriptor(payload_block: int, load_addr: int, block_count: int, f
 
 
 
+class WindowsRawDevice:
+    # Small file-style wrapper for Windows raw disk HANDLE objects.
+    GENERIC_READ = 0x80000000
+    GENERIC_WRITE = 0x40000000
+    FILE_SHARE_READ = 0x00000001
+    FILE_SHARE_WRITE = 0x00000002
+    OPEN_EXISTING = 3
+    FILE_ATTRIBUTE_NORMAL = 0x00000080
+
+    def __init__(self, device: str, mode: str):
+        self.device = device
+        self.mode = mode
+        self.handle = None
+        self.writable = any(ch in mode for ch in "+wa")
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        self.kernel32 = kernel32
+
+        kernel32.CreateFileW.argtypes = [
+            wintypes.LPCWSTR,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.LPVOID,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.HANDLE,
+        ]
+        kernel32.CreateFileW.restype = wintypes.HANDLE
+        kernel32.SetFilePointerEx.argtypes = [
+            wintypes.HANDLE,
+            ctypes.c_longlong,
+            ctypes.POINTER(ctypes.c_longlong),
+            wintypes.DWORD,
+        ]
+        kernel32.SetFilePointerEx.restype = wintypes.BOOL
+        kernel32.ReadFile.argtypes = [
+            wintypes.HANDLE,
+            wintypes.LPVOID,
+            wintypes.DWORD,
+            ctypes.POINTER(wintypes.DWORD),
+            wintypes.LPVOID,
+        ]
+        kernel32.ReadFile.restype = wintypes.BOOL
+        kernel32.WriteFile.argtypes = [
+            wintypes.HANDLE,
+            wintypes.LPCVOID,
+            wintypes.DWORD,
+            ctypes.POINTER(wintypes.DWORD),
+            wintypes.LPVOID,
+        ]
+        kernel32.WriteFile.restype = wintypes.BOOL
+        kernel32.FlushFileBuffers.argtypes = [wintypes.HANDLE]
+        kernel32.FlushFileBuffers.restype = wintypes.BOOL
+        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel32.CloseHandle.restype = wintypes.BOOL
+
+        access = self.GENERIC_READ
+        if self.writable:
+            access |= self.GENERIC_WRITE
+
+        handle = kernel32.CreateFileW(
+            device,
+            access,
+            self.FILE_SHARE_READ | self.FILE_SHARE_WRITE,
+            None,
+            self.OPEN_EXISTING,
+            self.FILE_ATTRIBUTE_NORMAL,
+            None,
+        )
+
+        if handle == wintypes.HANDLE(-1).value:
+            self._raise_last_error()
+
+        self.handle = handle
+
+    def _raise_last_error(self) -> None:
+        code = ctypes.get_last_error()
+        raise OSError(code, ctypes.FormatError(code), self.device)
+
+    def seek(self, offset: int, whence: int = os.SEEK_SET) -> int:
+        new_pos = ctypes.c_longlong(0)
+        if not self.kernel32.SetFilePointerEx(
+            self.handle,
+            ctypes.c_longlong(offset),
+            ctypes.byref(new_pos),
+            whence,
+        ):
+            self._raise_last_error()
+        return new_pos.value
+
+    def read(self, size: int = -1) -> bytes:
+        if size < 0:
+            raise ValueError("Raw block-device reads require an explicit byte count.")
+
+        buffer = ctypes.create_string_buffer(size)
+        bytes_read = wintypes.DWORD(0)
+        if not self.kernel32.ReadFile(
+            self.handle,
+            buffer,
+            size,
+            ctypes.byref(bytes_read),
+            None,
+        ):
+            self._raise_last_error()
+        return buffer.raw[:bytes_read.value]
+
+    def write(self, data: bytes) -> int:
+        view = memoryview(data)
+        total = 0
+        while total < len(view):
+            chunk = view[total:total + 0x100000].tobytes()
+            buffer = ctypes.create_string_buffer(chunk)
+            bytes_written = wintypes.DWORD(0)
+            if not self.kernel32.WriteFile(
+                self.handle,
+                buffer,
+                len(chunk),
+                ctypes.byref(bytes_written),
+                None,
+            ):
+                self._raise_last_error()
+            total += bytes_written.value
+            if bytes_written.value != len(chunk):
+                raise OSError(f"Short write to {self.device}")
+        return total
+
+    def flush(self) -> None:
+        if self.writable and not self.kernel32.FlushFileBuffers(self.handle):
+            self._raise_last_error()
+
+    def close(self) -> None:
+        if self.handle is not None:
+            self.kernel32.CloseHandle(self.handle)
+            self.handle = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+        return False
+
+
+class WindowsVolumeLock:
+    # Windows volume lock remains open during raw disk access.
+    GENERIC_READ = 0x80000000
+    GENERIC_WRITE = 0x40000000
+    FILE_SHARE_READ = 0x00000001
+    FILE_SHARE_WRITE = 0x00000002
+    OPEN_EXISTING = 3
+    FILE_ATTRIBUTE_NORMAL = 0x00000080
+    FSCTL_LOCK_VOLUME = 0x00090018
+    FSCTL_UNLOCK_VOLUME = 0x0009001C
+    FSCTL_DISMOUNT_VOLUME = 0x00090020
+
+    def __init__(self, volume: str):
+        self.volume = volume.rstrip(r"\/")
+        self.handle = None
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        self.kernel32 = kernel32
+
+        kernel32.CreateFileW.argtypes = [
+            wintypes.LPCWSTR,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.LPVOID,
+            wintypes.DWORD,
+            wintypes.DWORD,
+            wintypes.HANDLE,
+        ]
+        kernel32.CreateFileW.restype = wintypes.HANDLE
+        kernel32.DeviceIoControl.argtypes = [
+            wintypes.HANDLE,
+            wintypes.DWORD,
+            wintypes.LPVOID,
+            wintypes.DWORD,
+            wintypes.LPVOID,
+            wintypes.DWORD,
+            ctypes.POINTER(wintypes.DWORD),
+            wintypes.LPVOID,
+        ]
+        kernel32.DeviceIoControl.restype = wintypes.BOOL
+        kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+        kernel32.CloseHandle.restype = wintypes.BOOL
+
+        handle = kernel32.CreateFileW(
+            self.volume,
+            self.GENERIC_READ | self.GENERIC_WRITE,
+            self.FILE_SHARE_READ | self.FILE_SHARE_WRITE,
+            None,
+            self.OPEN_EXISTING,
+            self.FILE_ATTRIBUTE_NORMAL,
+            None,
+        )
+
+        if handle == wintypes.HANDLE(-1).value:
+            self._raise_last_error()
+
+        self.handle = handle
+        self._device_io_control(self.FSCTL_LOCK_VOLUME)
+        self._device_io_control(self.FSCTL_DISMOUNT_VOLUME)
+
+    def _raise_last_error(self) -> None:
+        code = ctypes.get_last_error()
+        raise OSError(code, ctypes.FormatError(code), self.volume)
+
+    def _device_io_control(self, code: int) -> None:
+        bytes_returned = wintypes.DWORD(0)
+        if not self.kernel32.DeviceIoControl(
+            self.handle,
+            code,
+            None,
+            0,
+            None,
+            0,
+            ctypes.byref(bytes_returned),
+            None,
+        ):
+            self._raise_last_error()
+
+    def close(self) -> None:
+        if self.handle is not None:
+            self.kernel32.DeviceIoControl(
+                self.handle,
+                self.FSCTL_UNLOCK_VOLUME,
+                None,
+                0,
+                None,
+                0,
+                ctypes.byref(wintypes.DWORD(0)),
+                None,
+            )
+            self.kernel32.CloseHandle(self.handle)
+            self.handle = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+        return False
+
+
+def lock_windows_volume(volume: Optional[str]):
+    if volume is None:
+        return nullcontext()
+    if os.name != "nt":
+        raise ValueError("--windows-lock-volume is only supported on Windows.")
+    return WindowsVolumeLock(volume)
+
+
+def is_windows_raw_device(device: str) -> bool:
+    windows_raw_prefix = "\\\\.\\"
+    return os.name == "nt" and device.startswith(windows_raw_prefix)
+
+
+def open_block_device(device: str, mode: str):
+    # Block-device access uses POSIX file paths on Linux and Win32 handles for Windows raw disks.
+    if is_windows_raw_device(device):
+        return WindowsRawDevice(device, mode)
+    return open(device, mode, buffering=0)
+
+
+
+
 def write_sector_to_device(device: str, block_index: int, sector: bytes) -> None:
     # Writes exactly one 512-byte sector to the block device at the requested block offset.
     if len(sector) != SECTOR_SIZE:
         raise ValueError("Sector write currently expects exactly 512 bytes.")
-    path = pathlib.Path(device)
-    if not path.exists():
-        raise FileNotFoundError(f"Device not found: {device}")
     offset = block_index * SECTOR_SIZE
-    with open(path, "r+b", buffering=0) as f:
+    with open_block_device(device, "r+b") as f:
         f.seek(offset)
         f.write(sector)
-        f.flush()
 
 
 
@@ -257,24 +523,17 @@ def write_blocks_to_device(device: str, start_block: int, payload: bytes, sector
     # Writes a whole multi-sector payload contiguously starting at start_block.
     if len(payload) % sector_size != 0:
         raise ValueError("Payload length must be a whole number of sectors.")
-    path = pathlib.Path(device)
-    if not path.exists():
-        raise FileNotFoundError(f"Device not found: {device}")
     offset = start_block * sector_size
-    with open(path, "r+b", buffering=0) as f:
+    with open_block_device(device, "r+b") as f:
         f.seek(offset)
         f.write(payload)
-        f.flush()
 
 
 
 def read_sector_from_device(device: str, block_index: int, sector_size: int = SECTOR_SIZE) -> bytes:
     # Reads exactly one sector back for verification.
-    path = pathlib.Path(device)
-    if not path.exists():
-        raise FileNotFoundError(f"Device not found: {device}")
     offset = block_index * sector_size
-    with open(path, "rb", buffering=0) as f:
+    with open_block_device(device, "rb") as f:
         f.seek(offset)
         data = f.read(sector_size)
     if len(data) != sector_size:
@@ -285,12 +544,9 @@ def read_sector_from_device(device: str, block_index: int, sector_size: int = SE
 
 def read_blocks_from_device(device: str, start_block: int, block_count: int, sector_size: int = SECTOR_SIZE) -> bytes:
     # Reads a contiguous set of sectors back for verification.
-    path = pathlib.Path(device)
-    if not path.exists():
-        raise FileNotFoundError(f"Device not found: {device}")
     total = block_count * sector_size
     offset = start_block * sector_size
-    with open(path, "rb", buffering=0) as f:
+    with open_block_device(device, "rb") as f:
         f.seek(offset)
         data = f.read(total)
     if len(data) != total:
@@ -406,6 +662,8 @@ def sd_mode(args: argparse.Namespace) -> int:
     is_multisector = block_count > 1
     load_addr = parse_int(args.load_addr) if args.load_addr else origin
     descriptor_block = parse_int(args.descriptor_block) if args.descriptor_block else DEFAULT_DESCRIPTOR_BLOCK
+    if args.windows_lock_volume and args.device is None:
+        raise ValueError("--windows-lock-volume requires --device.")
 
     trimmed_hex_out = out_dir / f"{source.stem}_sd_trimmed_hex.txt"
     trimmed_bin_out = out_dir / f"{source.stem}_sd_trimmed.bin"
@@ -446,9 +704,10 @@ def sd_mode(args: argparse.Namespace) -> int:
             if args.block is None:
                 raise ValueError("--device requires --block.")
             block_index = parse_int(args.block)
-            write_sector_to_device(args.device, block_index, sector)
-            print(f"Wrote sector to {args.device} at block {block_index}")
-            readback = read_sector_from_device(args.device, block_index, sector_size=SECTOR_SIZE)
+            with lock_windows_volume(args.windows_lock_volume):
+                write_sector_to_device(args.device, block_index, sector)
+                print(f"Wrote sector to {args.device} at block {block_index}")
+                readback = read_sector_from_device(args.device, block_index, sector_size=SECTOR_SIZE)
             readback_match = "yes" if readback == sector else "no"
             readback_first16 = format_byte_preview(readback, 16)
             readback_last16 = format_tail_preview(readback, 16)
@@ -474,9 +733,15 @@ def sd_mode(args: argparse.Namespace) -> int:
         print(f"Load / entry address: 0x{load_addr:04X}")
 
         if args.device is not None:
-            write_blocks_to_device(args.device, payload_block, padded_payload, sector_size=SECTOR_SIZE)
-            print(f"Wrote {block_count} sectors to {args.device} starting at block {payload_block}")
-            payload_readback = read_blocks_from_device(args.device, payload_block, block_count, sector_size=SECTOR_SIZE)
+            with lock_windows_volume(args.windows_lock_volume):
+                write_blocks_to_device(args.device, payload_block, padded_payload, sector_size=SECTOR_SIZE)
+                print(f"Wrote {block_count} sectors to {args.device} starting at block {payload_block}")
+                payload_readback = read_blocks_from_device(args.device, payload_block, block_count, sector_size=SECTOR_SIZE)
+
+                write_sector_to_device(args.device, descriptor_block, descriptor)
+                print(f"Wrote descriptor to {args.device} at block {descriptor_block}")
+                descriptor_readback = read_sector_from_device(args.device, descriptor_block, sector_size=SECTOR_SIZE)
+
             readback_match = "yes" if payload_readback == padded_payload else "no"
             readback_first16 = format_byte_preview(payload_readback, 16)
             readback_last16 = format_tail_preview(payload_readback, 16)
@@ -484,9 +749,6 @@ def sd_mode(args: argparse.Namespace) -> int:
             print(f"Payload first 16 bytes: {readback_first16}")
             print(f"Payload last 16 bytes:  {readback_last16}")
 
-            write_sector_to_device(args.device, descriptor_block, descriptor)
-            print(f"Wrote descriptor to {args.device} at block {descriptor_block}")
-            descriptor_readback = read_sector_from_device(args.device, descriptor_block, sector_size=SECTOR_SIZE)
             descriptor_readback_match = "yes" if descriptor_readback == descriptor else "no"
             descriptor_first16 = format_byte_preview(descriptor_readback, 16)
             print(f"Descriptor readback matches: {descriptor_readback_match}")
@@ -508,6 +770,7 @@ def sd_mode(args: argparse.Namespace) -> int:
         "descriptor_output": str(descriptor_out.resolve()) if descriptor_out else "not used",
         "annotated_output": str(annotated_path.resolve()) if annotated_path else "not requested",
         "device": device_value,
+        "windows_lock_volume": args.windows_lock_volume if args.windows_lock_volume else "not used",
         "block": block_value,
         "load_address": f"0x{load_addr:04X}",
         "descriptor_block": str(descriptor_block),
@@ -564,7 +827,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
     sd.add_argument(
         "--device",
-        help="Optional block device path, e.g. /dev/mmcblk0",
+        help=r"Optional block device path, e.g. /dev/mmcblk0 or \\.\PhysicalDrive5",
+    )
+    sd.add_argument(
+        "--windows-lock-volume",
+        help=r"Optional Windows volume GUID to lock during direct raw-disk writes, e.g. \\?\Volume{...}",
     )
     sd.add_argument(
         "--block",

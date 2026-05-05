@@ -13,12 +13,12 @@ In SD mode, the script automatically chooses between:
 - a **single-sector install path** when the trimmed payload fits in one 512-byte sector
 - a **BT1 multi-sector install path** when the trimmed payload is larger than one sector
 
-This script was made for a workflow where:
+The workflow assumes:
 
 - ROM code typically starts at `0xC000`
 - RAM-loaded payloads typically start at addresses like `0x0200`
 - `customasm` is used as the assembler
-- SD cards are accessed as raw block devices such as `/dev/mmcblk0`
+- SD cards are accessed as raw block devices such as `/dev/mmcblk0` on Linux or `\\.\PhysicalDrive5` on Windows
 
 ---
 
@@ -85,6 +85,13 @@ If that prints a path, you are good.
 You can also check the version:
 
 ```bash
+customasm --version
+```
+
+On Windows PowerShell, use:
+
+```powershell
+where.exe customasm
 customasm --version
 ```
 
@@ -158,7 +165,7 @@ The script decides automatically based on the trimmed byte count.
 python3 deploy_asm.py sd ram_test_program.asm --origin 0x0200 --dump-annotated
 ```
 
-This will assemble the RAM payload and create the needed output files in `build/`, but will not write anything to the card.
+The command assembles the RAM payload and creates the needed output files in `build/`, but it will not write anything to the card.
 
 For a single-sector payload, it produces a padded 512-byte sector file named like:
 
@@ -172,7 +179,7 @@ build/ram_test_program_sector.bin
 sudo env "PATH=$PATH" python3 deploy_asm.py sd ram_test_program.asm --origin 0x0200 --device /dev/mmcblk0 --block 1003 --dump-annotated
 ```
 
-This assembles the RAM payload, writes one padded 512-byte sector to block `1003`, and reads that block back to verify the write.
+The command assembles the RAM payload, writes one padded 512-byte sector to block `1003`, and reads that block back to verify the write.
 
 ### Multi-sector build without direct device write
 
@@ -182,7 +189,7 @@ python3 deploy_asm.py sd stage2_monitor.asm --origin 0x0200 --block 1003 --descr
 
 For a multi-sector payload, `--block` is required because the BT1 descriptor needs to record the payload start block.
 
-This creates:
+The command creates:
 
 - a padded payload file
 - a BT1 descriptor file
@@ -190,7 +197,7 @@ This creates:
 - an optional annotated listing
 - a manifest file
 
-It does not write anything to the card unless `--device` is also provided.
+No card write occurs unless `--device` is also provided.
 
 ### Multi-sector build with direct device write
 
@@ -198,7 +205,7 @@ It does not write anything to the card unless `--device` is also provided.
 sudo env "PATH=$PATH" python3 deploy_asm.py sd stage2_monitor.asm --origin 0x0200 --device /dev/mmcblk0 --block 1003 --descriptor-block 1002 --dump-annotated
 ```
 
-This assembles the RAM payload and then:
+The command assembles the RAM payload and then:
 
 - writes the padded payload starting at block `1003`
 - writes the BT1 descriptor to block `1002`
@@ -221,7 +228,7 @@ You can override it explicitly with:
 
 ## Why `sudo env "PATH=$PATH"` may be needed
 
-When writing directly to `/dev/mmcblk0`, root permission is usually required.
+Direct writes to `/dev/mmcblk0` usually require root permission.
 
 If you simply run:
 
@@ -231,13 +238,75 @@ sudo python3 deploy_asm.py ...
 
 `customasm` may not be found because `sudo` often uses a different `PATH`.
 
-This version preserves your current `PATH`:
+Use this form to preserve your current `PATH`:
 
 ```bash
 sudo env "PATH=$PATH" python3 deploy_asm.py ...
 ```
 
-That is the recommended form for direct SD writes.
+Use that form for direct SD writes.
+
+---
+
+## Direct SD writes on Windows
+
+On Windows, run PowerShell as Administrator for direct card writes.
+
+Find the SD card disk number before a direct write:
+
+```powershell
+Get-Disk
+```
+
+A simple check is to run `Get-Disk`, insert the card, and run `Get-Disk` again. The new removable-sized disk is the SD card.
+
+If Windows assigned the card a drive letter, you can map that drive letter back to its disk number. For example, for drive `E:`:
+
+```powershell
+Get-Partition -DriveLetter E | Get-Disk | Format-List Number,FriendlyName,BusType,Size,PartitionStyle
+```
+
+If the card appears as disk `5`, the raw device name is:
+
+```text
+\\.\PhysicalDrive5
+```
+
+Use that raw device path with `--device`:
+
+```powershell
+python tools\deployment\deploy_asm.py sd ASM\programs\probe_oled_monitor\PROBE.asm --origin 0x0200 --device "\\.\PhysicalDrive5" --block 1003 --descriptor-block 1002 --dump-annotated
+```
+
+Do not use a mounted drive path such as `E:` for descriptor and payload blocks. The block numbers in this workflow are raw SD-card block numbers.
+
+If Windows blocks the raw disk write, find the volume GUID for the SD card:
+
+```powershell
+Get-CimInstance Win32_Volume | Select-Object DriveLetter, Label, FileSystem, Capacity, DeviceID
+```
+
+The SD-card volume should match the card size. For a 32 GB card, Windows often reports about `29.1 GB`. A volume GUID looks like:
+
+```text
+\\?\Volume{2a7913e0-4753-11f1-a6cb-28cdc480a7e2}\
+```
+
+Pass that GUID with `--windows-lock-volume`:
+
+```powershell
+python tools\deployment\deploy_asm.py sd ASM\programs\probe_oled_monitor\PROBE.asm --origin 0x0200 --device "\\.\PhysicalDrive5" --windows-lock-volume "\\?\Volume{2a7913e0-4753-11f1-a6cb-28cdc480a7e2}\" --block 1003 --descriptor-block 1002 --dump-annotated
+```
+
+`--windows-lock-volume` keeps the SD-card volume locked during the raw block-device write. The option is only needed on Windows setups that reject a direct `\\.\PhysicalDriveN` write.
+
+If Windows has the card mounted as drive `E:`, close File Explorer windows pointed at the card. You can also dismount the volume before a direct write:
+
+```powershell
+Dismount-Volume -DriveLetter E -Force
+```
+
+After a card reinsertion or card-reader change, recheck the disk number and volume GUID before any direct write.
 
 ---
 
@@ -341,7 +410,7 @@ Example:
 
 ## Example project workflow
 
-This is the workflow used for a descriptor-driven SD load-and-execute flow.
+The workflow below covers a descriptor-driven SD load-and-execute flow.
 
 ### 1. Build and write the RAM payload to SD
 
@@ -356,11 +425,25 @@ RAM payload source:
 ; deploy_asm.py will package it as a BT1 multi-sector payload.
 ```
 
-Build and write it to SD:
+Build and write it to SD on Linux:
 
 ```bash
 sudo env "PATH=$PATH" python3 deploy_asm.py sd stage2_monitor.asm --origin 0x0200 --device /dev/mmcblk0 --block 1003 --descriptor-block 1002 --dump-annotated
 ```
+
+Build and write it to SD on Windows PowerShell:
+
+```powershell
+python tools\deployment\deploy_asm.py sd ASM\programs\probe_oled_monitor\PROBE.asm --origin 0x0200 --device "\\.\PhysicalDrive5" --block 1003 --descriptor-block 1002 --dump-annotated
+```
+
+If Windows requires a volume lock, add `--windows-lock-volume`:
+
+```powershell
+python tools\deployment\deploy_asm.py sd ASM\programs\probe_oled_monitor\PROBE.asm --origin 0x0200 --device "\\.\PhysicalDrive5" --windows-lock-volume "\\?\Volume{2a7913e0-4753-11f1-a6cb-28cdc480a7e2}\" --block 1003 --descriptor-block 1002 --dump-annotated
+```
+
+Replace `PhysicalDrive5` with the SD card disk number from `Get-Disk`. Replace the volume GUID with the SD-card GUID from `Get-CimInstance Win32_Volume`.
 
 If the payload fits in one sector, the script writes one padded 512-byte sector at block `1003`.
 
@@ -424,6 +507,34 @@ cmp -l build/stage2_monitor_sector.bin readback_block1003.bin
 
 If `cmp` prints nothing, the two files match exactly.
 
+Windows PowerShell readback for the descriptor block:
+
+```powershell
+python -c "dev=r'\\.\PhysicalDrive5'; f=open(dev,'rb',buffering=0); f.seek(1002*512); data=f.read(512); f.close(); open('readback_bootdesc.bin','wb').write(data)"
+Format-Hex .\readback_bootdesc.bin | Select-Object -First 2
+```
+
+Windows PowerShell readback for a three-sector payload at block `1003`:
+
+```powershell
+python -c "dev=r'\\.\PhysicalDrive5'; count=3; f=open(dev,'rb',buffering=0); f.seek(1003*512); data=f.read(count*512); f.close(); open('readback_payload.bin','wb').write(data)"
+Format-Hex .\readback_payload.bin | Select-Object -First 2
+```
+
+Compare the generated files against the Windows readback files:
+
+```powershell
+fc.exe /b build\stage2_monitor_bootdesc_bt1.bin readback_bootdesc.bin
+fc.exe /b build\stage2_monitor_payload_padded.bin readback_payload.bin
+```
+
+For a single-sector payload, read back one block and compare against the single-sector image:
+
+```powershell
+python -c "dev=r'\\.\PhysicalDrive5'; f=open(dev,'rb',buffering=0); f.seek(1003*512); data=f.read(512); f.close(); open('readback_block1003.bin','wb').write(data)"
+fc.exe /b build\stage2_monitor_sector.bin readback_block1003.bin
+```
+
 ### 3. Build the ROM loader
 
 Build the ROM-side bootstrap:
@@ -465,22 +576,22 @@ In multi-sector SD mode, the script creates a 512-byte descriptor sector with th
 - byte 8..9 = load address
 - byte 10..11 = block count
 
-This descriptor is saved as `*_bootdesc_bt1.bin` and can also be written directly to the descriptor block on the SD card.
+The descriptor is saved as `*_bootdesc_bt1.bin` and can also be written directly to the descriptor block on the SD card.
 
 ---
 
 ## Notes on address trimming
 
-This script trims using the real occupied address span from customasm, not blindly from the chosen origin to the end of a padded image.
+The script trims from the real occupied address span reported by customasm, not blindly from the chosen origin to the end of a padded image.
 
-That matters because:
+Reason:
 
 - ROM code may start at `0xC000`
 - RAM payloads may start at `0x0200`
 - `customasm` output may include padded address space
 - only the actual occupied bytes should be packaged for ROM output or SD payload output
 
-This is especially important for RAM payloads, because only the true program bytes should appear at the beginning of the SD payload image.
+For RAM payloads, only the true program bytes should appear at the beginning of the SD payload image.
 
 ---
 
@@ -504,9 +615,56 @@ sudo env "PATH=$PATH" python3 deploy_asm.py ...
 
 Use `sudo` when writing directly to the SD card.
 
+### `A device attached to the system is not functioning` on Windows
+
+Check that the device path has no trailing slash. Use:
+
+```text
+\\.\PhysicalDrive5
+```
+
+Do not use:
+
+```text
+\\.\PhysicalDrive5\
+```
+
+Also confirm that PowerShell has Administrator permission and that the SD card is still the same disk number shown by `Get-Disk`.
+
+
+### `[Errno 5] Access is denied` on Windows
+
+Run PowerShell as Administrator first. If the SD card is not read-only and Windows still rejects `\\.\PhysicalDriveN`, find the SD-card volume GUID:
+
+```powershell
+Get-CimInstance Win32_Volume | Select-Object DriveLetter, Label, FileSystem, Capacity, DeviceID
+```
+
+Then add `--windows-lock-volume` to the deploy command:
+
+```powershell
+python tools\deployment\deploy_asm.py sd ASM\programs\probe_oled_monitor\PROBE.asm --origin 0x0200 --device "\\.\PhysicalDrive5" --windows-lock-volume "\\?\Volume{2a7913e0-4753-11f1-a6cb-28cdc480a7e2}\" --block 1003 --descriptor-block 1002 --dump-annotated
+```
+
+Do not use a Linux partition or Google Drive volume GUID. Match the SD-card size before the write.
+
+### `[Errno 9] Bad file descriptor` on Windows
+
+Run the current Windows-compatible script version. Windows raw disk paths such as `\\.\PhysicalDrive5` use the Win32 device API inside the script rather than Python's normal file-path layer.
+
+Also confirm that PowerShell was opened as Administrator and that the SD-card volume is not open in File Explorer. If the card has drive letter `E:`, you can dismount it before the write:
+
+```powershell
+Dismount-Volume -DriveLetter E -Force
+```
+
+### Windows card appears as `No Media`
+
+Some USB card readers expose an empty slot and the inserted card as separate disk entries. Use the entry with the real card size and `Online` status. For a 32 GB card, Windows may report about `29.12 GB`.
+
 ### The payload is larger than one 512-byte sector
 
-That is supported automatically.
+The script supports that automatically.
 
 If the trimmed payload fits in one sector, the script uses the single-sector path.
 
@@ -516,21 +674,21 @@ For multi-sector SD builds, provide `--block` so the descriptor can record where
 
 ### Multi-sector SD mode says `--block` is required
 
-That is expected.
+Expected behavior.
 
-The script needs the payload start block in order to generate the BT1 descriptor. This is true even when you are only generating files and not writing directly to the SD card.
+The script needs the payload start block in order to generate the BT1 descriptor. The same requirement applies even when you only generate files and do not write directly to the SD card.
 
 ### The script writes files into `build/`, not next to the script
 
-That is expected unless you change `--out-dir`.
+Expected behavior unless you change `--out-dir`.
 
 ### The manifest says `payload_readback_match: not checked`
 
-That means the script built files but did not perform a direct device write in that run.
+The script built files but did not perform a direct device write in that run.
 
 ### The manifest says `descriptor_readback_match: not checked`
 
-That usually means either:
+Usually, one of these is true:
 
 - the run did not use direct device write
 - or the build used the single-sector path, so no BT1 descriptor was written
