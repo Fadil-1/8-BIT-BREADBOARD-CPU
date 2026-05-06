@@ -81,7 +81,7 @@ tools/display_rom/
     Generator for the 14-segment display ROM.
 
 tools/oled/
-    OLED-related generator scripts, including the 5x7 text library generator.
+    OLED-related generator scripts, including the 5x7 and 4x6 text library generators.
 
 EEPROM Programmer/
     Arduino-based EEPROM programmer material used earlier in the project.
@@ -153,7 +153,7 @@ ASM/boot/
     SD-card ROM bootstrap programs.
 
 ASM/drivers/oled/
-    Basic OLED constants and low-level display routines.
+    OLED constants, low-level display routines, and text libraries.
 
 ASM/drivers/spi_sd/
     SPI and SD-card routines used by the bootloader and future monitor work.
@@ -164,6 +164,23 @@ ASM/libs/
 ASM/programs/
     Early demo programs.
 ```
+
+## OLED text libraries
+
+The OLED driver includes two text layers:
+
+```text
+oled_text_5x7.asm
+    5x7 text in 6x8 cells.
+
+oled_text_4x6.asm
+    Compact 4x6 text in 4x7 cells.
+```
+
+I noticed that **writing on row 63 produces some kind of reflection artifacts near the top of the display**.
+Normal 5x7 text usually hides this because the last row of each 8-pixel cell is blank spacing, but filled graphics can expose it.
+The compact 4x6 library only uses a 32-column by 9-row text grid and avoids raw pixel row 63 altogether.
+
 ## Architecture
 
 ![Architecture diagram](images/architecture.png)
