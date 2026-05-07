@@ -49,7 +49,6 @@ VID_FRAME_LOOP:
 
     MOV $A, VID_FRAME_LEFT
     STC
-    NOP
     SUB $A, 0x01
     PSF
     MOV VID_FRAME_LEFT, $A
@@ -72,7 +71,6 @@ VID_SET_START_BLOCK:
 VID_INC_SD_BLOCK:
     MOV $A, SD_BLOCK_ADDR_LSB
     CLC
-    NOP
     ADD $A, 0x01
     PSF
     MOV SD_BLOCK_ADDR_LSB, $A
@@ -81,7 +79,6 @@ VID_INC_SD_BLOCK:
 
     MOV $A, SD_BLOCK_ADDR_B1
     CLC
-    NOP
     ADD $A, 0x01
     PSF
     MOV SD_BLOCK_ADDR_B1, $A
@@ -90,7 +87,6 @@ VID_INC_SD_BLOCK:
 
     MOV $A, SD_BLOCK_ADDR_B2
     CLC
-    NOP
     ADD $A, 0x01
     PSF
     MOV SD_BLOCK_ADDR_B2, $A
@@ -99,7 +95,6 @@ VID_INC_SD_BLOCK:
 
     MOV $A, SD_BLOCK_ADDR_MSB
     CLC
-    NOP
     ADD $A, 0x01
     MOV SD_BLOCK_ADDR_MSB, $A
 
@@ -119,7 +114,6 @@ VID_LOAD_SLOT_TO_BUFFER:
 
     MOV $A, VID_SECTORS_LEFT
     STC
-    NOP
     SUB $A, 0x01
     PSF
     MOV VID_SECTORS_LEFT, $A
@@ -135,11 +129,9 @@ VID_LOAD_SLOT_TO_BUFFER:
 
 VID_INC_CD:
     CLC
-    NOP
     ADD $C, 0x01
     JNC .VID_INC_CD_DONE
     CLC
-    NOP
     ADD $D, 0x01
 
 .VID_INC_CD_DONE:
@@ -166,7 +158,6 @@ VID_DRAW_DELTA_SLOT:
 .VID_RUN_LOOP:
     MOV $A, VID_RUNS_LEFT
     STC
-    NOP
     CMP $A, 0x00
     JZ .VID_RUNS_DONE
 
@@ -193,13 +184,11 @@ VID_DRAW_DELTA_SLOT:
     OLD $A
     JSR VID_INC_CD
     STC
-    NOP
     SUB $B, 0x01
     JNZ .VID_DATA_LOOP
 
     MOV $A, VID_RUNS_LEFT
     STC
-    NOP
     SUB $A, 0x01
     MOV VID_RUNS_LEFT, $A
     JMP .VID_RUN_LOOP
@@ -214,10 +203,8 @@ VID_BEGIN_RUN_WINDOW:
     OLC $A
     MOV $A, VID_RUN_COUNT
     STC
-    NOP
     SUB $A, 0x01
     CLC
-    NOP
     ADD $A, VID_RUN_COL
     OLC $A
 
