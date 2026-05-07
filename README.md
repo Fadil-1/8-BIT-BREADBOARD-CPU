@@ -73,7 +73,7 @@ generated/microcode/
     Generated instruction documentation and microcode ROM images.
 
 tools/microcode/
-    Python microcode generator used to create rule definitions,
+    Python microcode generator used to create CustomASM rule definitions,
     instruction documentation, and the three microcode ROM binaries.
 
 tools/deployment/
@@ -91,8 +91,8 @@ tools/oled/
 arduino_EEPROM_programmer/
     Arduino-based EEPROM programmer material used earlier in the project.
 
-Schematics & Figures/
-    Hardware schematics, diagrams, and exported figures.
+schematics_and_figures/
+    Module schematics, and exported figures.
 
 datasheets/
     Datasheets for ICs and modules used in the build.
