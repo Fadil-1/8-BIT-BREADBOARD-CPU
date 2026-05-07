@@ -6,9 +6,13 @@ The goal of this repository is to collect the files needed to document, program,
 
 ![Full build](images/full.jpg)
 
-## Project status
+## Blog
 
-The CPU is functional and already runs Fibonacci and display demos. The current development focuses on the SD-card loader, OLED text/monitor work, and the software structure needed for a small monitor-like environment.
+More detailed explanations are available on the project blog:
+
+```text
+https://fadil-1.github.io/blog/8-bit_breadboard_CPU/overview/
+```
 
 ## Acknowledgment
 
@@ -189,12 +193,6 @@ The compact 4x6 library only uses a 32-column by 9-row text grid and avoids raw 
 ## Architecture
 
 ![Architecture diagram](images/architecture.png)
-
-More detailed explanations are available on the project blog:
-
-```text
-https://fadil-1.github.io/blog/8-bit_breadboard_CPU/overview/
-```
 
 ## License
 
