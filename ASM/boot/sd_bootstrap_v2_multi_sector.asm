@@ -1,6 +1,10 @@
 ; ==========================================================
 ; sd_bootstrap_v2_multi_sector.asm
 ; Multi-sector BT1 SD bootstrap ROM
+;
+; Original version: April 2026
+; Last Modified: May 2026
+; Fadil Isamotu
 ; ==========================================================
 ;
 ; Purpose:
@@ -202,7 +206,6 @@ LOAD_LOOP:
 
     ; ROM-side debug counter for completed sector reads.
     CLC
-    NOP
     MOV $A, 0x010A
     ADD $A, 0x01
     MOV 0x010A, $A
@@ -234,28 +237,24 @@ LOAD_FAIL:
 ; ----------------------------------------------------------
 INC_BLOCK_U32_BE_0100:
     CLC
-    NOP
     MOV $A, 0x0103
     ADD $A, 0x01
     MOV 0x0103, $A
     JNC INC32_DONE
 
     CLC
-    NOP
     MOV $A, 0x0102
     ADD $A, 0x01
     MOV 0x0102, $A
     JNC INC32_DONE
 
     CLC
-    NOP
     MOV $A, 0x0101
     ADD $A, 0x01
     MOV 0x0101, $A
     JNC INC32_DONE
 
     CLC
-    NOP
     MOV $A, 0x0100
     ADD $A, 0x01
     MOV 0x0100, $A
@@ -278,7 +277,6 @@ INC32_DONE:
 ; ----------------------------------------------------------
 ADD_0200_TO_PTR_0108:
     CLC
-    NOP
     MOV $A, 0x0109
     ADD $A, 0x02
     MOV 0x0109, $A
@@ -297,14 +295,12 @@ ADD_0200_TO_PTR_0108:
 ; ----------------------------------------------------------
 DEC_U16_BE_0106:
     STC
-    NOP
     MOV $A, 0x0107
     SUB $A, 0x01
     MOV 0x0107, $A
     JC  DEC16_DONE
 
     STC
-    NOP
     MOV $A, 0x0106
     SUB $A, 0x01
     MOV 0x0106, $A

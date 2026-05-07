@@ -1,12 +1,22 @@
+; ==========================================================
+; primes.asm
+; ==========================================================
+; 32-bit Prime Numbers Finder.
+;
+; Original version: May 2026
+; Fadil Isamotu
+; ==========================================================
+
+
 #addr 0x0200
-#include "../../ruledef.asm"
-#include "../../drivers/oled/oled_constants.asm"
+#include "../../../ruledef.asm"
+#include "../../../drivers/oled/oled_constants.asm"
 
 JMP START
 
-#include "../../drivers/oled/oled_lowlevel.asm"
-#include "../../drivers/oled/oled_text_5x7.asm"
-#include "../../libs/timing.asm"
+#include "../../../drivers/oled/oled_lowlevel.asm"
+#include "../../../drivers/oled/oled_text_5x7.asm"
+#include "../../../libs/timing.asm"
 
 
 ; Scratch RAM for the SD-loaded showcase.
@@ -195,7 +205,6 @@ BLINK_CURSOR_AFTER_OK:
     JSR SHOWCASE_DELAY_CURSOR
 
     STC
-    NOP
     SUB $C, 0x01
     JNZ .BLINK_LOOP
 
@@ -236,7 +245,6 @@ SHOWCASE_BLOCK_SWEEP_FAST_ROW:
     JSR SHOWCASE_SWEEP_LEFT
 
     STC
-    NOP
     SUB $D, 0x01
     JNZ .SWEEP_CYCLE
 
@@ -256,11 +264,9 @@ SHOWCASE_SWEEP_RIGHT:
     JSR OLED5_CLEAR_CURRENT_CELL_DIRECT
 
     CLC
-    NOP
     ADD $C, 0x01
 
     STC
-    NOP
     CMP $C, OLED5_MAX_COLS
     JNZ .RIGHT_LOOP
 
@@ -279,12 +285,10 @@ SHOWCASE_SWEEP_LEFT:
     JSR OLED5_CLEAR_CURRENT_CELL_DIRECT
 
     STC
-    NOP
     CMP $C, 0x00
     JZ .LEFT_DONE
 
     STC
-    NOP
     SUB $C, 0x01
     JMP .LEFT_LOOP
 
@@ -394,7 +398,6 @@ PRIME_LOOP:
 
     MOV $A, PRIME_FLAG
     STC
-    NOP
     CMP $A, 0x00
     JZ .NOT_PRIME
 
@@ -421,22 +424,18 @@ PRIME_TEST_CURRENT:
 
     MOV $A, PRIME_CAND_B3
     STC
-    NOP
     CMP $A, 0x00
     JNZ .SETUP_DIVISOR
     MOV $A, PRIME_CAND_B2
     STC
-    NOP
     CMP $A, 0x00
     JNZ .SETUP_DIVISOR
     MOV $A, PRIME_CAND_B1
     STC
-    NOP
     CMP $A, 0x00
     JNZ .SETUP_DIVISOR
     MOV $A, PRIME_CAND_B0
     STC
-    NOP
     CMP $A, 0x02
     JZ .IS_PRIME
 
@@ -457,26 +456,22 @@ PRIME_TEST_CURRENT:
     JSR PRIME_CHECK_SQUARE_GT_CANDIDATE
     MOV $A, PRIME_SQ_GT_FLAG
     STC
-    NOP
     CMP $A, 0x00
     JNZ .IS_PRIME
 
     JSR PRIME_MOD_CURRENT_BY_DIV
     MOV $A, PRIME_MOD_ZERO
     STC
-    NOP
     CMP $A, 0x00
     JNZ .NOT_PRIME_RESULT
 
     ; 65535 is the largest divisor needed for a 32-bit candidate.
     MOV $A, PRIME_DIV_B1
     STC
-    NOP
     CMP $A, 0xFF
     JNZ .NEXT_DIVISOR
     MOV $A, PRIME_DIV_B0
     STC
-    NOP
     CMP $A, 0xFF
     JZ .IS_PRIME
 
@@ -500,7 +495,6 @@ PRIME_CHECK_SQUARE_GT_CANDIDATE:
 
     MOV $A, PRIME_CAND_B3
     STC
-    NOP
     CMP $A, PRIME_DIV_SQ_B3
     JNC .SQUARE_GT
     JZ .CHECK_B2
@@ -509,7 +503,6 @@ PRIME_CHECK_SQUARE_GT_CANDIDATE:
 .CHECK_B2:
     MOV $A, PRIME_CAND_B2
     STC
-    NOP
     CMP $A, PRIME_DIV_SQ_B2
     JNC .SQUARE_GT
     JZ .CHECK_B1
@@ -518,7 +511,6 @@ PRIME_CHECK_SQUARE_GT_CANDIDATE:
 .CHECK_B1:
     MOV $A, PRIME_CAND_B1
     STC
-    NOP
     CMP $A, PRIME_DIV_SQ_B1
     JNC .SQUARE_GT
     JZ .CHECK_B0
@@ -527,7 +519,6 @@ PRIME_CHECK_SQUARE_GT_CANDIDATE:
 .CHECK_B0:
     MOV $A, PRIME_CAND_B0
     STC
-    NOP
     CMP $A, PRIME_DIV_SQ_B0
     JNC .SQUARE_GT
     RTS
@@ -560,44 +551,35 @@ PRIME_MOD_CURRENT_BY_DIV:
 
 .MOD_BIT_LOOP:
     CLC
-    NOP
     MOV $A, PRIME_NUM_B0
     ADD $A, PRIME_NUM_B0
     MOV PRIME_NUM_B0, $A
     MOV $A, PRIME_NUM_B1
-    NOP
     ADD $A, PRIME_NUM_B1
     MOV PRIME_NUM_B1, $A
     MOV $A, PRIME_NUM_B2
-    NOP
     ADD $A, PRIME_NUM_B2
     MOV PRIME_NUM_B2, $A
     MOV $A, PRIME_NUM_B3
-    NOP
     ADD $A, PRIME_NUM_B3
     MOV PRIME_NUM_B3, $A
 
     MOV $A, PRIME_REM_B0
-    NOP
     ADD $A, PRIME_REM_B0
     MOV PRIME_REM_B0, $A
     MOV $A, PRIME_REM_B1
-    NOP
     ADD $A, PRIME_REM_B1
     MOV PRIME_REM_B1, $A
     MOV $A, PRIME_REM_B2
-    NOP
     ADD $A, PRIME_REM_B2
     MOV PRIME_REM_B2, $A
     MOV $A, PRIME_REM_B3
-    NOP
     ADD $A, PRIME_REM_B3
     MOV PRIME_REM_B3, $A
 
     JSR PRIME_REM_GE_DIVISOR
     MOV $A, PRIME_REM_GE_FLAG
     STC
-    NOP
     CMP $A, 0x00
     JZ .NEXT_BIT
 
@@ -605,7 +587,6 @@ PRIME_MOD_CURRENT_BY_DIV:
 
 .NEXT_BIT:
     STC
-    NOP
     SUB $C, 0x01
     JNZ .MOD_BIT_LOOP
 
@@ -619,18 +600,15 @@ PRIME_REM_GE_DIVISOR:
 
     MOV $A, PRIME_REM_B3
     STC
-    NOP
     CMP $A, 0x00
     JNZ .YES
     MOV $A, PRIME_REM_B2
     STC
-    NOP
     CMP $A, 0x00
     JNZ .YES
 
     MOV $A, PRIME_REM_B1
     STC
-    NOP
     CMP $A, PRIME_DIV_B1
     JNC .NO
     JZ .CHECK_LOW
@@ -639,7 +617,6 @@ PRIME_REM_GE_DIVISOR:
 .CHECK_LOW:
     MOV $A, PRIME_REM_B0
     STC
-    NOP
     CMP $A, PRIME_DIV_B0
     JNC .NO
 
@@ -653,22 +630,18 @@ PRIME_REM_GE_DIVISOR:
 PRIME_SUB_DIVISOR_FROM_REM:
     MOV $A, PRIME_REM_B0
     STC
-    NOP
     SUB $A, PRIME_DIV_B0
     MOV PRIME_REM_B0, $A
 
     MOV $A, PRIME_REM_B1
-    NOP
     SUB $A, PRIME_DIV_B1
     MOV PRIME_REM_B1, $A
 
     MOV $A, PRIME_REM_B2
-    NOP
     SUB $A, 0x00
     MOV PRIME_REM_B2, $A
 
     MOV $A, PRIME_REM_B3
-    NOP
     SUB $A, 0x00
     MOV PRIME_REM_B3, $A
 
@@ -681,22 +654,18 @@ PRIME_CHECK_REM_ZERO:
 
     MOV $A, PRIME_REM_B0
     STC
-    NOP
     CMP $A, 0x00
     JNZ .DONE
     MOV $A, PRIME_REM_B1
     STC
-    NOP
     CMP $A, 0x00
     JNZ .DONE
     MOV $A, PRIME_REM_B2
     STC
-    NOP
     CMP $A, 0x00
     JNZ .DONE
     MOV $A, PRIME_REM_B3
     STC
-    NOP
     CMP $A, 0x00
     JNZ .DONE
 
@@ -717,12 +686,10 @@ PRIME_UPDATE_DIVISOR_AND_SQUARE:
 
     MOV $A, PRIME_DIV_B0
     CLC
-    NOP
     ADD $A, 0x02
     MOV PRIME_DIV_B0, $A
 
     MOV $A, PRIME_DIV_B1
-    NOP
     ADD $A, 0x00
     MOV PRIME_DIV_B1, $A
 
@@ -732,22 +699,18 @@ PRIME_UPDATE_DIVISOR_AND_SQUARE:
 PRIME_ADD_DIVISOR_TO_SQUARE:
     MOV $A, PRIME_DIV_SQ_B0
     CLC
-    NOP
     ADD $A, PRIME_DIV_B0
     MOV PRIME_DIV_SQ_B0, $A
 
     MOV $A, PRIME_DIV_SQ_B1
-    NOP
     ADD $A, PRIME_DIV_B1
     MOV PRIME_DIV_SQ_B1, $A
 
     MOV $A, PRIME_DIV_SQ_B2
-    NOP
     ADD $A, 0x00
     MOV PRIME_DIV_SQ_B2, $A
 
     MOV $A, PRIME_DIV_SQ_B3
-    NOP
     ADD $A, 0x00
     MOV PRIME_DIV_SQ_B3, $A
 
@@ -757,22 +720,18 @@ PRIME_ADD_DIVISOR_TO_SQUARE:
 PRIME_ADD_4_TO_SQUARE:
     MOV $A, PRIME_DIV_SQ_B0
     CLC
-    NOP
     ADD $A, 0x04
     MOV PRIME_DIV_SQ_B0, $A
 
     MOV $A, PRIME_DIV_SQ_B1
-    NOP
     ADD $A, 0x00
     MOV PRIME_DIV_SQ_B1, $A
 
     MOV $A, PRIME_DIV_SQ_B2
-    NOP
     ADD $A, 0x00
     MOV PRIME_DIV_SQ_B2, $A
 
     MOV $A, PRIME_DIV_SQ_B3
-    NOP
     ADD $A, 0x00
     MOV PRIME_DIV_SQ_B3, $A
 
@@ -783,28 +742,23 @@ PRIME_ADVANCE_CANDIDATE:
     ; 2 is followed by odd candidates only: 3, 5, 7, ...
     MOV $A, PRIME_CAND_B3
     STC
-    NOP
     CMP $A, 0x00
     JNZ .ADD_TWO
     MOV $A, PRIME_CAND_B2
     STC
-    NOP
     CMP $A, 0x00
     JNZ .ADD_TWO
     MOV $A, PRIME_CAND_B1
     STC
-    NOP
     CMP $A, 0x00
     JNZ .ADD_TWO
     MOV $A, PRIME_CAND_B0
     STC
-    NOP
     CMP $A, 0x02
     JNZ .ADD_TWO
 
     MOV $A, PRIME_CAND_B0
     CLC
-    NOP
     ADD $A, 0x01
     MOV PRIME_CAND_B0, $A
     RTS
@@ -812,22 +766,18 @@ PRIME_ADVANCE_CANDIDATE:
 .ADD_TWO:
     MOV $A, PRIME_CAND_B0
     CLC
-    NOP
     ADD $A, 0x02
     MOV PRIME_CAND_B0, $A
 
     MOV $A, PRIME_CAND_B1
-    NOP
     ADD $A, 0x00
     MOV PRIME_CAND_B1, $A
 
     MOV $A, PRIME_CAND_B2
-    NOP
     ADD $A, 0x00
     MOV PRIME_CAND_B2, $A
 
     MOV $A, PRIME_CAND_B3
-    NOP
     ADD $A, 0x00
     MOV PRIME_CAND_B3, $A
 
@@ -837,22 +787,18 @@ PRIME_ADVANCE_CANDIDATE:
 PRIME_INCREMENT_COUNT:
     MOV $A, PRIME_COUNT_B0
     CLC
-    NOP
     ADD $A, 0x01
     MOV PRIME_COUNT_B0, $A
 
     MOV $A, PRIME_COUNT_B1
-    NOP
     ADD $A, 0x00
     MOV PRIME_COUNT_B1, $A
 
     MOV $A, PRIME_COUNT_B2
-    NOP
     ADD $A, 0x00
     MOV PRIME_COUNT_B2, $A
 
     MOV $A, PRIME_COUNT_B3
-    NOP
     ADD $A, 0x00
     MOV PRIME_COUNT_B3, $A
 
@@ -1064,7 +1010,6 @@ PRIME_DEC_PLACE:
 .PLACE_LOOP:
     MOV $A, PRIME_DEC_B3
     STC
-    NOP
     CMP $A, PRIME_DEC_CONST_B3
     JNC .PLACE_DONE
     JZ .CHECK_B2
@@ -1073,7 +1018,6 @@ PRIME_DEC_PLACE:
 .CHECK_B2:
     MOV $A, PRIME_DEC_B2
     STC
-    NOP
     CMP $A, PRIME_DEC_CONST_B2
     JNC .PLACE_DONE
     JZ .CHECK_B1
@@ -1082,7 +1026,6 @@ PRIME_DEC_PLACE:
 .CHECK_B1:
     MOV $A, PRIME_DEC_B1
     STC
-    NOP
     CMP $A, PRIME_DEC_CONST_B1
     JNC .PLACE_DONE
     JZ .CHECK_B0
@@ -1091,35 +1034,29 @@ PRIME_DEC_PLACE:
 .CHECK_B0:
     MOV $A, PRIME_DEC_B0
     STC
-    NOP
     CMP $A, PRIME_DEC_CONST_B0
     JNC .PLACE_DONE
 
 .SUB_CONST:
     MOV $A, PRIME_DEC_B0
     STC
-    NOP
     SUB $A, PRIME_DEC_CONST_B0
     MOV PRIME_DEC_B0, $A
 
     MOV $A, PRIME_DEC_B1
-    NOP
     SUB $A, PRIME_DEC_CONST_B1
     MOV PRIME_DEC_B1, $A
 
     MOV $A, PRIME_DEC_B2
-    NOP
     SUB $A, PRIME_DEC_CONST_B2
     MOV PRIME_DEC_B2, $A
 
     MOV $A, PRIME_DEC_B3
-    NOP
     SUB $A, PRIME_DEC_CONST_B3
     MOV PRIME_DEC_B3, $A
 
     MOV $A, PRIME_DEC_DIGIT
     CLC
-    NOP
     ADD $A, 0x01
     MOV PRIME_DEC_DIGIT, $A
 
@@ -1128,19 +1065,16 @@ PRIME_DEC_PLACE:
 .PLACE_DONE:
     MOV $A, PRIME_DEC_DIGIT
     STC
-    NOP
     CMP $A, 0x00
     JNZ .PRINT_DIGIT
 
     MOV $A, PRIME_DEC_STARTED
     STC
-    NOP
     CMP $A, 0x00
     JNZ .PRINT_DIGIT
 
     MOV $A, PRIME_DEC_FORCE
     STC
-    NOP
     CMP $A, 0x00
     JNZ .PRINT_DIGIT
 
@@ -1149,7 +1083,6 @@ PRIME_DEC_PLACE:
 .PRINT_DIGIT:
     MOV $A, PRIME_DEC_DIGIT
     CLC
-    NOP
     ADD $A, 0x30
     MOV PRIME_DEC_CHAR_TMP, $A
 
@@ -1158,7 +1091,6 @@ PRIME_DEC_PLACE:
 
     MOV $A, PRIME_DEC_DATA_MODE
     STC
-    NOP
     CMP $A, 0x00
     JZ .PRINT_NORMAL
 
@@ -1188,7 +1120,6 @@ PRIME_NEWLINE_AFTER_NUMBER:
 PRIME_DATA_WRAP_CHECK:
     MOV $A, OLED_CURSOR_ROW
     STC
-    NOP
     CMP $A, 0x04
     JNC .RESET_DATA_AREA
 
@@ -1220,20 +1151,16 @@ PRIME_CLEAR_DATA_AREA:
     JSR OLED5_CLEAR_CURRENT_CELL_DIRECT
 
     CLC
-    NOP
     ADD $C, 0x01
 
     STC
-    NOP
     CMP $C, OLED5_MAX_COLS
     JNZ .CLEAR_COL
 
     CLC
-    NOP
     ADD $D, 0x01
 
     STC
-    NOP
     CMP $D, OLED5_MAX_ROWS
     JNZ .CLEAR_ROW
 
@@ -1260,12 +1187,10 @@ SHOWCASE_DELAY_MEDIUM:
     NOP
 
     STC
-    NOP
     SUB $B, 0x01
     JNZ .SDM_INNER
 
     STC
-    NOP
     SUB $A, 0x01
     JNZ .SDM_OUTER
 
@@ -1294,12 +1219,10 @@ SHOWCASE_DELAY_FAST:
     NOP
 
     STC
-    NOP
     SUB $B, 0x01
     JNZ .SDF_INNER
 
     STC
-    NOP
     SUB $A, 0x01
     JNZ .SDF_OUTER
 

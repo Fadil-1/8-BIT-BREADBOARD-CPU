@@ -63,12 +63,10 @@ OLED4_NEWLINE:
 
     MOV $A, OLED_CURSOR_ROW
     CLC
-    NOP
     ADD $A, 0x01
     MOV OLED_CURSOR_ROW, $A
 
     STC
-    NOP
     CMP $A, OLED4_MAX_ROWS
     JZ OLED4_NEWLINE_WRAP_TOP
 
@@ -82,12 +80,10 @@ OLED4_NEWLINE_WRAP_TOP:
 OLED4_ADVANCE_CURSOR:
     MOV $A, OLED_CURSOR_COL
     STC
-    NOP
     CMP $A, OLED4_LAST_COL
     JZ OLED4_ADVANCE_CURSOR_PENDING
 
     CLC
-    NOP
     ADD $A, 0x01
     MOV OLED_CURSOR_COL, $A
     RTS
@@ -99,12 +95,10 @@ OLED4_ADVANCE_CURSOR_PENDING:
 
 OLED4_INC_CD:
     CLC
-    NOP
     ADD $C, 0x01
     JNC OLED4_INC_CD_DONE
 
     CLC
-    NOP
     ADD $D, 0x01
 
 OLED4_INC_CD_DONE:
@@ -115,7 +109,6 @@ OLED4_DRAW_STRING_LOOP:
     MOV $A, [$CD]
 
     STC
-    NOP
     CMP $A, 0x00
     JZ OLED4_DRAW_STRING_DONE
 
@@ -131,571 +124,476 @@ OLED4_DRAW_CHAR:
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x20       ; SPACE
     JZ OLED4_CHAR_SPACE
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x30       ; 0
     JZ OLED4_CHAR_DIGIT_0
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x31       ; 1
     JZ OLED4_CHAR_DIGIT_1
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x32       ; 2
     JZ OLED4_CHAR_DIGIT_2
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x33       ; 3
     JZ OLED4_CHAR_DIGIT_3
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x34       ; 4
     JZ OLED4_CHAR_DIGIT_4
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x35       ; 5
     JZ OLED4_CHAR_DIGIT_5
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x36       ; 6
     JZ OLED4_CHAR_DIGIT_6
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x37       ; 7
     JZ OLED4_CHAR_DIGIT_7
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x38       ; 8
     JZ OLED4_CHAR_DIGIT_8
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x39       ; 9
     JZ OLED4_CHAR_DIGIT_9
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x41       ; A
     JZ OLED4_CHAR_A
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x42       ; B
     JZ OLED4_CHAR_B
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x43       ; C
     JZ OLED4_CHAR_C
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x44       ; D
     JZ OLED4_CHAR_D
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x45       ; E
     JZ OLED4_CHAR_E
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x46       ; F
     JZ OLED4_CHAR_F
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x47       ; G
     JZ OLED4_CHAR_G
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x48       ; H
     JZ OLED4_CHAR_H
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x49       ; I
     JZ OLED4_CHAR_I
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x4A       ; J
     JZ OLED4_CHAR_J
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x4B       ; K
     JZ OLED4_CHAR_K
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x4C       ; L
     JZ OLED4_CHAR_L
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x4D       ; M
     JZ OLED4_CHAR_M
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x4E       ; N
     JZ OLED4_CHAR_N
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x4F       ; O
     JZ OLED4_CHAR_O
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x50       ; P
     JZ OLED4_CHAR_P
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x51       ; Q
     JZ OLED4_CHAR_Q
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x52       ; R
     JZ OLED4_CHAR_R
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x53       ; S
     JZ OLED4_CHAR_S
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x54       ; T
     JZ OLED4_CHAR_T
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x55       ; U
     JZ OLED4_CHAR_U
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x56       ; V
     JZ OLED4_CHAR_V
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x57       ; W
     JZ OLED4_CHAR_W
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x58       ; X
     JZ OLED4_CHAR_X
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x59       ; Y
     JZ OLED4_CHAR_Y
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x5A       ; Z
     JZ OLED4_CHAR_Z
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x21       ; !
     JZ OLED4_CHAR_EXCLAMATION
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x22       ; "
     JZ OLED4_CHAR_DOUBLE_QUOTE
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x23       ; #
     JZ OLED4_CHAR_HASH
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x24       ; $
     JZ OLED4_CHAR_DOLLAR
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x25       ; %
     JZ OLED4_CHAR_PERCENT
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x26       ; &
     JZ OLED4_CHAR_AMPERSAND
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x27       ; '
     JZ OLED4_CHAR_APOSTROPHE
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x28       ; (
     JZ OLED4_CHAR_LPAREN
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x29       ; )
     JZ OLED4_CHAR_RPAREN
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x2A       ; *
     JZ OLED4_CHAR_ASTERISK
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x2B       ; +
     JZ OLED4_CHAR_PLUS
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x2C       ; ,
     JZ OLED4_CHAR_COMMA
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x2D       ; -
     JZ OLED4_CHAR_DASH
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x2E       ; .
     JZ OLED4_CHAR_DOT
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x2F       ; /
     JZ OLED4_CHAR_SLASH
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x3A       ; :
     JZ OLED4_CHAR_COLON
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x3B       ; ;
     JZ OLED4_CHAR_SEMICOLON
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x3C       ; <
     JZ OLED4_CHAR_LT
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x3D       ; =
     JZ OLED4_CHAR_EQUALS
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x3E       ; >
     JZ OLED4_CHAR_GT
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x3F       ; ?
     JZ OLED4_CHAR_QUESTION
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x40       ; @
     JZ OLED4_CHAR_AT
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x5B       ; [
     JZ OLED4_CHAR_LBRACKET
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x5C       ; \
     JZ OLED4_CHAR_BACKSLASH
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x5D       ; ]
     JZ OLED4_CHAR_RBRACKET
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x5E       ; ^
     JZ OLED4_CHAR_CARET
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x5F       ; _
     JZ OLED4_CHAR_UNDERSCORE
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x60       ; `
     JZ OLED4_CHAR_BACKTICK
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x7B       ; {
     JZ OLED4_CHAR_LBRACE
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x7C       ; |
     JZ OLED4_CHAR_PIPE
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x7D       ; }
     JZ OLED4_CHAR_RBRACE
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x7E       ; ~
     JZ OLED4_CHAR_TILDE
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x61       ; a
     JZ OLED4_CHAR_A
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x62       ; b
     JZ OLED4_CHAR_B
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x63       ; c
     JZ OLED4_CHAR_C
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x64       ; d
     JZ OLED4_CHAR_D
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x65       ; e
     JZ OLED4_CHAR_E
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x66       ; f
     JZ OLED4_CHAR_F
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x67       ; g
     JZ OLED4_CHAR_G
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x68       ; h
     JZ OLED4_CHAR_H
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x69       ; i
     JZ OLED4_CHAR_I
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x6A       ; j
     JZ OLED4_CHAR_J
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x6B       ; k
     JZ OLED4_CHAR_K
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x6C       ; l
     JZ OLED4_CHAR_L
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x6D       ; m
     JZ OLED4_CHAR_M
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x6E       ; n
     JZ OLED4_CHAR_N
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x6F       ; o
     JZ OLED4_CHAR_O
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x70       ; p
     JZ OLED4_CHAR_P
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x71       ; q
     JZ OLED4_CHAR_Q
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x72       ; r
     JZ OLED4_CHAR_R
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x73       ; s
     JZ OLED4_CHAR_S
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x74       ; t
     JZ OLED4_CHAR_T
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x75       ; u
     JZ OLED4_CHAR_U
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x76       ; v
     JZ OLED4_CHAR_V
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x77       ; w
     JZ OLED4_CHAR_W
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x78       ; x
     JZ OLED4_CHAR_X
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x79       ; y
     JZ OLED4_CHAR_Y
 
     MOV $A, OLED_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x7A       ; z
     JZ OLED4_CHAR_Z
 
@@ -708,16 +606,13 @@ OLED4_COMPUTE_CURSOR_BASE:
 
 OLED4_CURSOR_X_LOOP:
     STC
-    NOP
     CMP $B, 0x00
     JZ OLED4_CURSOR_X_DONE
 
     CLC
-    NOP
     ADD $A, 0x02
 
     STC
-    NOP
     SUB $B, 0x01
     JMP OLED4_CURSOR_X_LOOP
 
@@ -730,16 +625,13 @@ OLED4_CURSOR_X_DONE:
 
 OLED4_CURSOR_Y_LOOP:
     STC
-    NOP
     CMP $B, 0x00
     JZ OLED4_CURSOR_Y_DONE
 
     CLC
-    NOP
     ADD $A, 0x07
 
     STC
-    NOP
     SUB $B, 0x01
     JMP OLED4_CURSOR_Y_LOOP
 
@@ -756,7 +648,6 @@ OLED4_RENDER_BEGIN:
     MOV $A, OLED_GLYPH_BASE_X
     OLC $A
     CLC
-    NOP
     ADD $A, 0x01
     OLC $A
 
@@ -766,7 +657,6 @@ OLED4_RENDER_BEGIN:
     MOV $A, OLED_GLYPH_BASE_Y
     OLC $A
     CLC
-    NOP
     ADD $A, 0x06
     OLC $A
 
@@ -3169,12 +3059,10 @@ OLED4_CLEAR_TEXT_SCREEN:
 .OLED4_CLEAR_TEXT_COL:
     OLD $A
     STC
-    NOP
     SUB $B, 0x01
     JNZ .OLED4_CLEAR_TEXT_COL
 
     STC
-    NOP
     SUB $D, 0x01
     JNZ .OLED4_CLEAR_TEXT_ROW
 
@@ -3185,17 +3073,14 @@ OLED4_CLEAR_TEXT_SCREEN:
 
 OLED4_PUTC:
     STC
-    NOP
     CMP $A, 0x0A
     JZ OLED4_PUTC_NEWLINE
 
     STC
-    NOP
     CMP $A, 0x0D
     JZ OLED4_PUTC_CR
 
     STC
-    NOP
     CMP $A, 0x08
     JZ OLED4_PUTC_BACKSPACE
 
@@ -3226,18 +3111,15 @@ OLED4_CARRIAGE_RETURN:
 OLED4_BACKSPACE:
     MOV $A, OLED4_PENDING_WRAP
     STC
-    NOP
     CMP $A, 0x00
     JNZ .OLED4_BACKSPACE_CLEAR_CURRENT
 
     MOV $A, OLED_CURSOR_COL
     STC
-    NOP
     CMP $A, 0x00
     JZ OLED4_BACKSPACE_DONE
 
     STC
-    NOP
     SUB $A, 0x01
     MOV OLED_CURSOR_COL, $A
 
@@ -3252,7 +3134,6 @@ OLED4_BACKSPACE_DONE:
 OLED4_APPLY_PENDING_WRAP:
     MOV $A, OLED4_PENDING_WRAP
     STC
-    NOP
     CMP $A, 0x00
     JNZ .OLED4_APPLY_WRAP
 
@@ -3265,12 +3146,10 @@ OLED4_APPLY_PENDING_WRAP:
 
     MOV $A, OLED_CURSOR_ROW
     CLC
-    NOP
     ADD $A, 0x01
     MOV OLED_CURSOR_ROW, $A
 
     STC
-    NOP
     CMP $A, OLED4_MAX_ROWS
     JZ .OLED4_APPLY_WRAP_TOP
 
@@ -3293,7 +3172,6 @@ OLED4_CLEAR_CURRENT_CELL_DIRECT:
     MOV $A, OLED_GLYPH_BASE_X
     OLC $A
     CLC
-    NOP
     ADD $A, 0x01
     OLC $A
 
@@ -3302,7 +3180,6 @@ OLED4_CLEAR_CURRENT_CELL_DIRECT:
     MOV $A, OLED_GLYPH_BASE_Y
     OLC $A
     CLC
-    NOP
     ADD $A, 0x06
     OLC $A
 
@@ -3317,12 +3194,10 @@ OLED4_CLEAR_CURRENT_CELL_DIRECT:
 .OLED4_CLEAR_CELL_COL:
     OLD $A
     STC
-    NOP
     SUB $B, 0x01
     JNZ .OLED4_CLEAR_CELL_COL
 
     STC
-    NOP
     SUB $D, 0x01
     JNZ .OLED4_CLEAR_CELL_ROW
 
@@ -3343,7 +3218,6 @@ OLED4_DRAW_CURRENT_CELL_BLOCK_DIRECT:
     MOV $A, OLED_GLYPH_BASE_X
     OLC $A
     CLC
-    NOP
     ADD $A, 0x01
     OLC $A
 
@@ -3352,7 +3226,6 @@ OLED4_DRAW_CURRENT_CELL_BLOCK_DIRECT:
     MOV $A, OLED_GLYPH_BASE_Y
     OLC $A
     CLC
-    NOP
     ADD $A, 0x06
     OLC $A
 
@@ -3367,12 +3240,10 @@ OLED4_DRAW_CURRENT_CELL_BLOCK_DIRECT:
 .OLED4_DRAW_CELL_BLOCK_COL:
     OLD $A
     STC
-    NOP
     SUB $B, 0x01
     JNZ .OLED4_DRAW_CELL_BLOCK_COL
 
     STC
-    NOP
     SUB $D, 0x01
     JNZ .OLED4_DRAW_CELL_BLOCK_ROW
 
@@ -3399,23 +3270,19 @@ OLED4_TYPE_CHAR_WITH_CURSOR:
 
 OLED4_PRINT_HEX_NIBBLE:
     STC
-    NOP
     CMP $A, 0x0A
     JC .OLED4_HEX_LETTER
 
 .OLED4_HEX_DIGIT:
     CLC
-    NOP
     ADD $A, 0x30
     JSR OLED4_PUTC
     RTS
 
 .OLED4_HEX_LETTER:
     STC
-    NOP
     SUB $A, 0x0A
     CLC
-    NOP
     ADD $A, 0x41
     JSR OLED4_PUTC
     RTS

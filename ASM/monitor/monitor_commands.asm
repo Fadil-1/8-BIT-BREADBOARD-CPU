@@ -2,6 +2,10 @@
 ; monitor_commands.asm
 ; ==========================================================
 ; Monitor prompt, command dispatch, and command handlers.
+;
+; Original version: April 2026
+; Last Modified: May 2026
+; Fadil Isamotu
 ; ==========================================================
 
 ; ----------------------------------------------------------
@@ -62,13 +66,11 @@ MON_HANDLE_KEY:
 
     ; LF/newline submits command.
     STC
-    NOP
     CMP $A, 0x0A
     JZ MON_HANDLE_KEY_SUBMIT
 
     ; CR/carriage return submits command.
     STC
-    NOP
     CMP $A, 0x0D
     JZ MON_HANDLE_KEY_SUBMIT
 
@@ -280,19 +282,16 @@ MON_FEED_KEY_STRING:
 
     ; 0x00 terminates the script.
     STC
-    NOP
     CMP $A, 0x00
     JZ MON_FEED_KEY_STRING_DONE
 
     ; Advance pointer before MON_HANDLE_KEY, which may reuse $C/$D.
     CLC
-    NOP
     ADD $C, 0x01
     MOV MON_KEY_SCRIPT_PTR_LO, $C
     JNC .MON_FEED_KEY_STRING_NO_CARRY
 
     CLC
-    NOP
     ADD $D, 0x01
     MOV MON_KEY_SCRIPT_PTR_HI, $D
 
@@ -628,7 +627,6 @@ MON_CMD_DMP_ADDR:
     ; Check parser status.
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_CMD_DMP_ADDR_BAD
 
@@ -682,7 +680,6 @@ MON_CMD_PEEK_ADDR:
     ; Check parser status.
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_CMD_PEEK_ADDR_BAD
 
@@ -755,7 +752,6 @@ MON_CMD_POKE_ADDR_BYTE:
     ; Check address parse status.
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_CMD_POKE_ADDR_BYTE_BAD_ADDR
 
@@ -774,7 +770,6 @@ MON_CMD_POKE_ADDR_BYTE:
     ; Check byte parse status.
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_CMD_POKE_ADDR_BYTE_BAD_BYTE
 
@@ -860,7 +855,6 @@ MON_CMD_FILL_RANGE_BYTE:
 
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_CMD_FILL_RANGE_BYTE_BAD_ADDR
 
@@ -876,7 +870,6 @@ MON_CMD_FILL_RANGE_BYTE:
 
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_CMD_FILL_RANGE_BYTE_BAD_ADDR
 
@@ -892,14 +885,12 @@ MON_CMD_FILL_RANGE_BYTE:
 
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_CMD_FILL_RANGE_BYTE_BAD_BYTE
 
     ; Reject START > END.
     MOV $A, MON_FILL_START_HI
     STC
-    NOP
     CMP $A, MON_FILL_END_HI
     JNC MON_CMD_FILL_RANGE_BYTE_RANGE_OK
     JZ MON_CMD_FILL_RANGE_BYTE_CHECK_LO
@@ -908,7 +899,6 @@ MON_CMD_FILL_RANGE_BYTE:
 MON_CMD_FILL_RANGE_BYTE_CHECK_LO:
     MOV $A, MON_FILL_START_LO
     STC
-    NOP
     CMP $A, MON_FILL_END_LO
     JNC MON_CMD_FILL_RANGE_BYTE_RANGE_OK
     JZ MON_CMD_FILL_RANGE_BYTE_RANGE_OK
@@ -927,13 +917,11 @@ MON_FILL_LOOP:
     ; current address == END marks fill completion.
     MOV $A, MON_FILL_CUR_HI
     STC
-    NOP
     CMP $A, MON_FILL_END_HI
     JNZ MON_FILL_ADVANCE
 
     MOV $A, MON_FILL_CUR_LO
     STC
-    NOP
     CMP $A, MON_FILL_END_LO
     JZ MON_FILL_DONE
 
@@ -941,14 +929,12 @@ MON_FILL_ADVANCE:
     ; current++
     MOV $A, MON_FILL_CUR_LO
     CLC
-    NOP
     ADD $A, 0x01
     MOV MON_FILL_CUR_LO, $A
     JNC MON_FILL_LOOP
 
     MOV $A, MON_FILL_CUR_HI
     CLC
-    NOP
     ADD $A, 0x01
     MOV MON_FILL_CUR_HI, $A
 
@@ -1048,7 +1034,6 @@ MON_CMD_RUN_ADDR:
     ; Check address parse status.
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_CMD_RUN_ADDR_BAD
 
@@ -1227,7 +1212,6 @@ MON_CMD_CALL_ADDR:
     ; Check address parse status.
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_CMD_CALL_ADDR_BAD
 
@@ -1321,7 +1305,6 @@ MON_CMD_REG:
 
     MOV $A, MON_REG_VALID
     STC
-    NOP
     CMP $A, 0x00
     JZ MON_CMD_REG_NONE
 
@@ -1546,7 +1529,6 @@ MON_CMD_CMP_RANGE_COUNT:
 
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_CMD_CMP_RANGE_COUNT_BAD_ADDR
 
@@ -1560,7 +1542,6 @@ MON_CMD_CMP_RANGE_COUNT:
 
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_CMD_CMP_RANGE_COUNT_BAD_ADDR
 
@@ -1576,14 +1557,12 @@ MON_CMD_CMP_RANGE_COUNT:
 
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_CMD_CMP_RANGE_COUNT_BAD_BYTE
 
     ; Count 00 is valid and means an empty range matches.
     MOV $A, MON_MEMCMP_COUNT
     STC
-    NOP
     CMP $A, 0x00
     JZ MON_CMD_CMP_RANGE_COUNT_SAME
 
@@ -1603,33 +1582,28 @@ MON_MEMCMP_LOOP:
     ; Compare bytes.
     MOV $A, MON_MEMCMP_LEFT_BYTE
     STC
-    NOP
     CMP $A, MON_MEMCMP_RIGHT_BYTE
     JNZ MON_CMD_CMP_RANGE_COUNT_DIFF
 
     ; One byte matched. Decrement count.
     MOV $A, MON_MEMCMP_COUNT
     STC
-    NOP
     SUB $A, 0x01
     MOV MON_MEMCMP_COUNT, $A
 
     STC
-    NOP
     CMP $A, 0x00
     JZ MON_CMD_CMP_RANGE_COUNT_SAME
 
     ; left++
     MOV $A, MON_MEMCMP_LEFT_LO
     CLC
-    NOP
     ADD $A, 0x01
     MOV MON_MEMCMP_LEFT_LO, $A
     JNC .MON_MEMCMP_LEFT_INC_DONE
 
     MOV $A, MON_MEMCMP_LEFT_HI
     CLC
-    NOP
     ADD $A, 0x01
     MOV MON_MEMCMP_LEFT_HI, $A
 
@@ -1637,14 +1611,12 @@ MON_MEMCMP_LOOP:
     ; right++
     MOV $A, MON_MEMCMP_RIGHT_LO
     CLC
-    NOP
     ADD $A, 0x01
     MOV MON_MEMCMP_RIGHT_LO, $A
     JNC .MON_MEMCMP_RIGHT_INC_DONE
 
     MOV $A, MON_MEMCMP_RIGHT_HI
     CLC
-    NOP
     ADD $A, 0x01
     MOV MON_MEMCMP_RIGHT_HI, $A
 
@@ -1784,7 +1756,6 @@ MON_CMD_CP_RANGE_COUNT:
 
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_CMD_CP_RANGE_COUNT_BAD_ADDR
 
@@ -1798,7 +1769,6 @@ MON_CMD_CP_RANGE_COUNT:
 
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_CMD_CP_RANGE_COUNT_BAD_ADDR
 
@@ -1814,14 +1784,12 @@ MON_CMD_CP_RANGE_COUNT:
 
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_CMD_CP_RANGE_COUNT_BAD_BYTE
 
     ; Count 00 is valid and means no bytes are copied.
     MOV $A, MON_CP_COUNT
     STC
-    NOP
     CMP $A, 0x00
     JZ MON_CMD_CP_RANGE_COUNT_DONE
 
@@ -1841,26 +1809,22 @@ MON_CP_LOOP:
     ; One byte copied. Decrement count.
     MOV $A, MON_CP_COUNT
     STC
-    NOP
     SUB $A, 0x01
     MOV MON_CP_COUNT, $A
 
     STC
-    NOP
     CMP $A, 0x00
     JZ MON_CMD_CP_RANGE_COUNT_DONE
 
     ; source++
     MOV $A, MON_CP_SRC_LO
     CLC
-    NOP
     ADD $A, 0x01
     MOV MON_CP_SRC_LO, $A
     JNC .MON_CP_SRC_INC_DONE
 
     MOV $A, MON_CP_SRC_HI
     CLC
-    NOP
     ADD $A, 0x01
     MOV MON_CP_SRC_HI, $A
 
@@ -1868,14 +1832,12 @@ MON_CP_LOOP:
     ; destination++
     MOV $A, MON_CP_DST_LO
     CLC
-    NOP
     ADD $A, 0x01
     MOV MON_CP_DST_LO, $A
     JNC .MON_CP_DST_INC_DONE
 
     MOV $A, MON_CP_DST_HI
     CLC
-    NOP
     ADD $A, 0x01
     MOV MON_CP_DST_HI, $A
 
@@ -1973,12 +1935,10 @@ MON_DMP_PRINT_4_BYTES_AT_CD:
     ; Byte 1.
     MOV $C, MON_DMP_ADDR_LO
     CLC
-    NOP
     ADD $C, 0x01
     JNC .MON_DMP_BYTE1_NO_CARRY
     MOV $D, MON_DMP_ADDR_HI
     CLC
-    NOP
     ADD $D, 0x01
     JMP .MON_DMP_BYTE1_READY
 
@@ -1995,12 +1955,10 @@ MON_DMP_PRINT_4_BYTES_AT_CD:
     ; Byte 2.
     MOV $C, MON_DMP_ADDR_LO
     CLC
-    NOP
     ADD $C, 0x02
     JNC .MON_DMP_BYTE2_NO_CARRY
     MOV $D, MON_DMP_ADDR_HI
     CLC
-    NOP
     ADD $D, 0x01
     JMP .MON_DMP_BYTE2_READY
 
@@ -2017,12 +1975,10 @@ MON_DMP_PRINT_4_BYTES_AT_CD:
     ; Byte 3.
     MOV $C, MON_DMP_ADDR_LO
     CLC
-    NOP
     ADD $C, 0x03
     JNC .MON_DMP_BYTE3_NO_CARRY
     MOV $D, MON_DMP_ADDR_HI
     CLC
-    NOP
     ADD $D, 0x01
     JMP .MON_DMP_BYTE3_READY
 
@@ -2067,12 +2023,10 @@ MON_DMP_PRINT_8_BYTES_AT_CD:
     MOV $D, MON_DMP_ADDR_HI
 
     CLC
-    NOP
     ADD $C, 0x04
     JNC .MON_DMP_PRINT_8_PLUS4_OK
 
     CLC
-    NOP
     ADD $D, 0x01
 
 .MON_DMP_PRINT_8_PLUS4_OK:
@@ -2342,12 +2296,10 @@ MON_HELP_APPEND_A:
     MOV [$CD], $A
 
     CLC
-    NOP
     ADD $C, 0x01
     JNC MON_HELP_APPEND_A_DONE
 
     CLC
-    NOP
     ADD $D, 0x01
 
 MON_HELP_APPEND_A_DONE:

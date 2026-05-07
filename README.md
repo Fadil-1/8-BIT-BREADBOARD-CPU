@@ -55,8 +55,13 @@ ASM/libs/
     Shared assembly helpers such as timing routines.
 
 ASM/programs/
-    Early standalone demo programs such as Fibonacci, bounce, OLED demos,
-    and display tests.
+    Example programs grouped by how they are loaded.
+
+ASM/programs/loaded_from_ROM/
+    Smaller examples that can run from ROM or older direct-programming flows.
+
+ASM/programs/loaded_from_SD/
+    Larger SD-loaded programs, including prime-number and OLED animation examples.
 
 ASM/ruledef.asm
     Generated CustomASM rule definitions for the current instruction set.
@@ -81,9 +86,9 @@ tools/display_rom/
     Generator for the 14-segment display ROM.
 
 tools/oled/
-    OLED-related generator scripts, including the 5x7 and 4x6 text library generators.
+    OLED-related tools, including text-library generators and the SD delta video converter.
 
-EEPROM Programmer/
+arduino_EEPROM_programmer/
     Arduino-based EEPROM programmer material used earlier in the project.
 
 Schematics & Figures/
@@ -153,7 +158,7 @@ ASM/boot/
     SD-card ROM bootstrap programs.
 
 ASM/drivers/oled/
-    OLED constants, low-level display routines, and text libraries.
+    OLED constants, low-level display routines, text libraries, and graphics primitives.
 
 ASM/drivers/spi_sd/
     SPI and SD-card routines used by the bootloader and future monitor work.
@@ -177,7 +182,7 @@ oled_text_4x6.asm
     Compact 4x6 text in 4x7 cells.
 ```
 
-I noticed that **writing on row 63 produces some kind of reflection artifacts near the top of the display**.
+I noticed that **writing on raw pixel row 63 produces a visible artifact near the top of the display**.
 Normal 5x7 text usually hides this because the last row of each 8-pixel cell is blank spacing, but filled graphics can expose it.
 The compact 4x6 library only uses a 32-column by 9-row text grid and avoids raw pixel row 63 altogether.
 

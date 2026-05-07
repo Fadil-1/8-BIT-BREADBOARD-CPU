@@ -10,7 +10,8 @@ In SD mode, it automatically chooses between:
   - a one-sector path when the trimmed payload fits in 512 bytes
   - a BT1 multi-sector install path when the payload is larger
 
-Original version: May 2026
+Original version: April 2026
+Updated: May 2026
 Fadil Isamotu
 """
 

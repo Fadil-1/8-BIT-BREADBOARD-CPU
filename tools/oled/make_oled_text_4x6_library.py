@@ -33,6 +33,9 @@
 #
 # Font source:
 #   Project compact 4x6 font table, tested first on Arduino.
+#
+# Original version: May 2026
+# Fadil Isamotu
 # ==========================================================
 
 from pathlib import Path
@@ -211,12 +214,10 @@ OLED4_CLEAR_TEXT_SCREEN:
 .OLED4_CLEAR_TEXT_COL:
     OLD $A
     STC
-    NOP
     SUB $B, 0x01
     JNZ .OLED4_CLEAR_TEXT_COL
 
     STC
-    NOP
     SUB $D, 0x01
     JNZ .OLED4_CLEAR_TEXT_ROW
 
@@ -227,17 +228,14 @@ OLED4_CLEAR_TEXT_SCREEN:
 
 OLED4_PUTC:
     STC
-    NOP
     CMP $A, 0x0A
     JZ OLED4_PUTC_NEWLINE
 
     STC
-    NOP
     CMP $A, 0x0D
     JZ OLED4_PUTC_CR
 
     STC
-    NOP
     CMP $A, 0x08
     JZ OLED4_PUTC_BACKSPACE
 
@@ -268,18 +266,15 @@ OLED4_CARRIAGE_RETURN:
 OLED4_BACKSPACE:
     MOV $A, OLED4_PENDING_WRAP
     STC
-    NOP
     CMP $A, 0x00
     JNZ .OLED4_BACKSPACE_CLEAR_CURRENT
 
     MOV $A, OLED_CURSOR_COL
     STC
-    NOP
     CMP $A, 0x00
     JZ OLED4_BACKSPACE_DONE
 
     STC
-    NOP
     SUB $A, 0x01
     MOV OLED_CURSOR_COL, $A
 
@@ -294,7 +289,6 @@ OLED4_BACKSPACE_DONE:
 OLED4_APPLY_PENDING_WRAP:
     MOV $A, OLED4_PENDING_WRAP
     STC
-    NOP
     CMP $A, 0x00
     JNZ .OLED4_APPLY_WRAP
 
@@ -307,12 +301,10 @@ OLED4_APPLY_PENDING_WRAP:
 
     MOV $A, OLED_CURSOR_ROW
     CLC
-    NOP
     ADD $A, 0x01
     MOV OLED_CURSOR_ROW, $A
 
     STC
-    NOP
     CMP $A, OLED4_MAX_ROWS
     JZ .OLED4_APPLY_WRAP_TOP
 
@@ -335,7 +327,6 @@ OLED4_CLEAR_CURRENT_CELL_DIRECT:
     MOV $A, OLED_GLYPH_BASE_X
     OLC $A
     CLC
-    NOP
     ADD $A, 0x01
     OLC $A
 
@@ -344,7 +335,6 @@ OLED4_CLEAR_CURRENT_CELL_DIRECT:
     MOV $A, OLED_GLYPH_BASE_Y
     OLC $A
     CLC
-    NOP
     ADD $A, 0x06
     OLC $A
 
@@ -359,12 +349,10 @@ OLED4_CLEAR_CURRENT_CELL_DIRECT:
 .OLED4_CLEAR_CELL_COL:
     OLD $A
     STC
-    NOP
     SUB $B, 0x01
     JNZ .OLED4_CLEAR_CELL_COL
 
     STC
-    NOP
     SUB $D, 0x01
     JNZ .OLED4_CLEAR_CELL_ROW
 
@@ -385,7 +373,6 @@ OLED4_DRAW_CURRENT_CELL_BLOCK_DIRECT:
     MOV $A, OLED_GLYPH_BASE_X
     OLC $A
     CLC
-    NOP
     ADD $A, 0x01
     OLC $A
 
@@ -394,7 +381,6 @@ OLED4_DRAW_CURRENT_CELL_BLOCK_DIRECT:
     MOV $A, OLED_GLYPH_BASE_Y
     OLC $A
     CLC
-    NOP
     ADD $A, 0x06
     OLC $A
 
@@ -409,12 +395,10 @@ OLED4_DRAW_CURRENT_CELL_BLOCK_DIRECT:
 .OLED4_DRAW_CELL_BLOCK_COL:
     OLD $A
     STC
-    NOP
     SUB $B, 0x01
     JNZ .OLED4_DRAW_CELL_BLOCK_COL
 
     STC
-    NOP
     SUB $D, 0x01
     JNZ .OLED4_DRAW_CELL_BLOCK_ROW
 
@@ -441,23 +425,19 @@ OLED4_TYPE_CHAR_WITH_CURSOR:
 
 OLED4_PRINT_HEX_NIBBLE:
     STC
-    NOP
     CMP $A, 0x0A
     JC .OLED4_HEX_LETTER
 
 .OLED4_HEX_DIGIT:
     CLC
-    NOP
     ADD $A, 0x30
     JSR OLED4_PUTC
     RTS
 
 .OLED4_HEX_LETTER:
     STC
-    NOP
     SUB $A, 0x0A
     CLC
-    NOP
     ADD $A, 0x41
     JSR OLED4_PUTC
     RTS
@@ -620,12 +600,10 @@ def build_library() -> str:
         "",
         "    MOV $A, OLED_CURSOR_ROW",
         "    CLC",
-        "    NOP",
         "    ADD $A, 0x01",
         "    MOV OLED_CURSOR_ROW, $A",
         "",
         "    STC",
-        "    NOP",
         "    CMP $A, OLED4_MAX_ROWS",
         "    JZ OLED4_NEWLINE_WRAP_TOP",
         "",
@@ -639,12 +617,10 @@ def build_library() -> str:
         "OLED4_ADVANCE_CURSOR:",
         "    MOV $A, OLED_CURSOR_COL",
         "    STC",
-        "    NOP",
         "    CMP $A, OLED4_LAST_COL",
         "    JZ OLED4_ADVANCE_CURSOR_PENDING",
         "",
         "    CLC",
-        "    NOP",
         "    ADD $A, 0x01",
         "    MOV OLED_CURSOR_COL, $A",
         "    RTS",
@@ -656,12 +632,10 @@ def build_library() -> str:
         "",
         "OLED4_INC_CD:",
         "    CLC",
-        "    NOP",
         "    ADD $C, 0x01",
         "    JNC OLED4_INC_CD_DONE",
         "",
         "    CLC",
-        "    NOP",
         "    ADD $D, 0x01",
         "",
         "OLED4_INC_CD_DONE:",
@@ -672,7 +646,6 @@ def build_library() -> str:
         "    MOV $A, [$CD]",
         "",
         "    STC",
-        "    NOP",
         "    CMP $A, 0x00",
         "    JZ OLED4_DRAW_STRING_DONE",
         "",
@@ -693,7 +666,6 @@ def build_library() -> str:
         lines.extend([
             "    MOV $A, OLED_CHAR_TMP",
             "    STC",
-            "    NOP",
             f"    CMP $A, 0x{ord(ch):02X}       ; {cmp_comment_for_char(ch)}",
             f"    JZ OLED4_CHAR_{label}",
             "",
@@ -705,7 +677,6 @@ def build_library() -> str:
         lines.extend([
             "    MOV $A, OLED_CHAR_TMP",
             "    STC",
-            "    NOP",
             f"    CMP $A, 0x{ord(ch):02X}       ; {ch}",
             f"    JZ OLED4_CHAR_{label}",
             "",
@@ -721,16 +692,13 @@ def build_library() -> str:
         "",
         "OLED4_CURSOR_X_LOOP:",
         "    STC",
-        "    NOP",
         "    CMP $B, 0x00",
         "    JZ OLED4_CURSOR_X_DONE",
         "",
         "    CLC",
-        "    NOP",
         "    ADD $A, 0x02",
         "",
         "    STC",
-        "    NOP",
         "    SUB $B, 0x01",
         "    JMP OLED4_CURSOR_X_LOOP",
         "",
@@ -743,16 +711,13 @@ def build_library() -> str:
         "",
         "OLED4_CURSOR_Y_LOOP:",
         "    STC",
-        "    NOP",
         "    CMP $B, 0x00",
         "    JZ OLED4_CURSOR_Y_DONE",
         "",
         "    CLC",
-        "    NOP",
         "    ADD $A, 0x07",
         "",
         "    STC",
-        "    NOP",
         "    SUB $B, 0x01",
         "    JMP OLED4_CURSOR_Y_LOOP",
         "",
@@ -769,7 +734,6 @@ def build_library() -> str:
         "    MOV $A, OLED_GLYPH_BASE_X",
         "    OLC $A",
         "    CLC",
-        "    NOP",
         "    ADD $A, 0x01",
         "    OLC $A",
         "",
@@ -779,7 +743,6 @@ def build_library() -> str:
         "    MOV $A, OLED_GLYPH_BASE_Y",
         "    OLC $A",
         "    CLC",
-        "    NOP",
         "    ADD $A, 0x06",
         "    OLC $A",
         "",

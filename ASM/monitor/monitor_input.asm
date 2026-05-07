@@ -2,6 +2,10 @@
 ; monitor_input.asm
 ; ==========================================================
 ; Monitor input, command checks, and hex parser helpers.
+;
+; Original version: April 2026
+; Last Modified: May 2026
+; Fadil Isamotu
 ; ==========================================================
 
 ; ----------------------------------------------------------
@@ -82,21 +86,18 @@ MON_INPUT_EQUALS_STRING:
     ; Compare characters.
     MOV $A, MON_CMP_INPUT_CHAR
     STC
-    NOP
     CMP $A, MON_CMP_TEST_CHAR
     JNZ MON_INPUT_EQUALS_NO
 
     ; Both characters at 0x00 means the strings matched.
     MOV $A, MON_CMP_INPUT_CHAR
     STC
-    NOP
     CMP $A, 0x00
     JZ MON_INPUT_EQUALS_YES
 
     ; Advance input pointer.
     MOV $A, MON_CMP_INPUT_PTR_LO
     CLC
-    NOP
     ADD $A, 0x01
     MOV MON_CMP_INPUT_PTR_LO, $A
 
@@ -104,14 +105,12 @@ MON_INPUT_EQUALS_STRING:
 
     MOV $A, MON_CMP_INPUT_PTR_HI
     CLC
-    NOP
     ADD $A, 0x01
     MOV MON_CMP_INPUT_PTR_HI, $A
 
 .MON_INPUT_EQUALS_INPUT_NO_CARRY:
     MOV $A, MON_CMP_TEST_PTR_LO
     CLC
-    NOP
     ADD $A, 0x01
     MOV MON_CMP_TEST_PTR_LO, $A
 
@@ -119,7 +118,6 @@ MON_INPUT_EQUALS_STRING:
 
     MOV $A, MON_CMP_TEST_PTR_HI
     CLC
-    NOP
     ADD $A, 0x01
     MOV MON_CMP_TEST_PTR_HI, $A
 
@@ -223,7 +221,6 @@ MON_INPUT_IS_EMPTY:
     MOV $A, MON_INPUT_LEN
 
     STC
-    NOP
     CMP $A, 0x00
     JZ MON_INPUT_IS_EMPTY_YES
 
@@ -254,25 +251,21 @@ MON_INPUT_IS_EMPTY_YES:
 MON_INPUT_IS_DMP_ADDR:
     MOV $A, MON_INPUT_BUF
     STC
-    NOP
     CMP $A, 0x44       ; D
     JNZ MON_INPUT_IS_DMP_ADDR_NO
 
     MOV $A, MON_INPUT_BUF + 1
     STC
-    NOP
     CMP $A, 0x4D       ; M
     JNZ MON_INPUT_IS_DMP_ADDR_NO
 
     MOV $A, MON_INPUT_BUF + 2
     STC
-    NOP
     CMP $A, 0x50       ; P
     JNZ MON_INPUT_IS_DMP_ADDR_NO
 
     MOV $A, MON_INPUT_BUF + 3
     STC
-    NOP
     CMP $A, 0x20       ; space
     JNZ MON_INPUT_IS_DMP_ADDR_NO
 
@@ -303,31 +296,26 @@ MON_INPUT_IS_DMP_ADDR_NO:
 MON_INPUT_IS_PEEK_ADDR:
     MOV $A, MON_INPUT_BUF
     STC
-    NOP
     CMP $A, 0x50       ; P
     JNZ MON_INPUT_IS_PEEK_ADDR_NO
 
     MOV $A, MON_INPUT_BUF + 1
     STC
-    NOP
     CMP $A, 0x45       ; E
     JNZ MON_INPUT_IS_PEEK_ADDR_NO
 
     MOV $A, MON_INPUT_BUF + 2
     STC
-    NOP
     CMP $A, 0x45       ; E
     JNZ MON_INPUT_IS_PEEK_ADDR_NO
 
     MOV $A, MON_INPUT_BUF + 3
     STC
-    NOP
     CMP $A, 0x4B       ; K
     JNZ MON_INPUT_IS_PEEK_ADDR_NO
 
     MOV $A, MON_INPUT_BUF + 4
     STC
-    NOP
     CMP $A, 0x20       ; space
     JNZ MON_INPUT_IS_PEEK_ADDR_NO
 
@@ -361,43 +349,36 @@ MON_INPUT_IS_PEEK_ADDR_NO:
 MON_INPUT_IS_POKE_ADDR_BYTE:
     MOV $A, MON_INPUT_BUF
     STC
-    NOP
     CMP $A, 0x50       ; P
     JNZ MON_INPUT_IS_POKE_ADDR_BYTE_NO
 
     MOV $A, MON_INPUT_BUF + 1
     STC
-    NOP
     CMP $A, 0x4F       ; O
     JNZ MON_INPUT_IS_POKE_ADDR_BYTE_NO
 
     MOV $A, MON_INPUT_BUF + 2
     STC
-    NOP
     CMP $A, 0x4B       ; K
     JNZ MON_INPUT_IS_POKE_ADDR_BYTE_NO
 
     MOV $A, MON_INPUT_BUF + 3
     STC
-    NOP
     CMP $A, 0x45       ; E
     JNZ MON_INPUT_IS_POKE_ADDR_BYTE_NO
 
     MOV $A, MON_INPUT_BUF + 4
     STC
-    NOP
     CMP $A, 0x20       ; space after POKE
     JNZ MON_INPUT_IS_POKE_ADDR_BYTE_NO
 
     MOV $A, MON_INPUT_BUF + 9
     STC
-    NOP
     CMP $A, 0x20       ; space between address and byte
     JNZ MON_INPUT_IS_POKE_ADDR_BYTE_NO
 
     MOV $A, MON_INPUT_BUF + 12
     STC
-    NOP
     CMP $A, 0x00       ; require exact end after two byte digits
     JNZ MON_INPUT_IS_POKE_ADDR_BYTE_NO
 
@@ -431,49 +412,41 @@ MON_INPUT_IS_POKE_ADDR_BYTE_NO:
 MON_INPUT_IS_FILL_RANGE_BYTE:
     MOV $A, MON_INPUT_BUF
     STC
-    NOP
     CMP $A, 0x46       ; F
     JNZ MON_INPUT_IS_FILL_RANGE_BYTE_NO
 
     MOV $A, MON_INPUT_BUF + 1
     STC
-    NOP
     CMP $A, 0x49       ; I
     JNZ MON_INPUT_IS_FILL_RANGE_BYTE_NO
 
     MOV $A, MON_INPUT_BUF + 2
     STC
-    NOP
     CMP $A, 0x4C       ; L
     JNZ MON_INPUT_IS_FILL_RANGE_BYTE_NO
 
     MOV $A, MON_INPUT_BUF + 3
     STC
-    NOP
     CMP $A, 0x4C       ; L
     JNZ MON_INPUT_IS_FILL_RANGE_BYTE_NO
 
     MOV $A, MON_INPUT_BUF + 4
     STC
-    NOP
     CMP $A, 0x20       ; space after FILL
     JNZ MON_INPUT_IS_FILL_RANGE_BYTE_NO
 
     MOV $A, MON_INPUT_BUF + 9
     STC
-    NOP
     CMP $A, 0x20       ; space between START and END
     JNZ MON_INPUT_IS_FILL_RANGE_BYTE_NO
 
     MOV $A, MON_INPUT_BUF + 14
     STC
-    NOP
     CMP $A, 0x20       ; space between END and BYTE
     JNZ MON_INPUT_IS_FILL_RANGE_BYTE_NO
 
     MOV $A, MON_INPUT_BUF + 17
     STC
-    NOP
     CMP $A, 0x00       ; exact end after byte
     JNZ MON_INPUT_IS_FILL_RANGE_BYTE_NO
 
@@ -506,31 +479,26 @@ MON_INPUT_IS_FILL_RANGE_BYTE_NO:
 MON_INPUT_IS_RUN_ADDR:
     MOV $A, MON_INPUT_BUF
     STC
-    NOP
     CMP $A, 0x52       ; R
     JNZ MON_INPUT_IS_RUN_ADDR_NO
 
     MOV $A, MON_INPUT_BUF + 1
     STC
-    NOP
     CMP $A, 0x55       ; U
     JNZ MON_INPUT_IS_RUN_ADDR_NO
 
     MOV $A, MON_INPUT_BUF + 2
     STC
-    NOP
     CMP $A, 0x4E       ; N
     JNZ MON_INPUT_IS_RUN_ADDR_NO
 
     MOV $A, MON_INPUT_BUF + 3
     STC
-    NOP
     CMP $A, 0x20       ; space after RUN
     JNZ MON_INPUT_IS_RUN_ADDR_NO
 
     MOV $A, MON_INPUT_BUF + 8
     STC
-    NOP
     CMP $A, 0x00       ; exact end after address
     JNZ MON_INPUT_IS_RUN_ADDR_NO
 
@@ -563,37 +531,31 @@ MON_INPUT_IS_RUN_ADDR_NO:
 MON_INPUT_IS_CALL_ADDR:
     MOV $A, MON_INPUT_BUF
     STC
-    NOP
     CMP $A, 0x43       ; C
     JNZ MON_INPUT_IS_CALL_ADDR_NO
 
     MOV $A, MON_INPUT_BUF + 1
     STC
-    NOP
     CMP $A, 0x41       ; A
     JNZ MON_INPUT_IS_CALL_ADDR_NO
 
     MOV $A, MON_INPUT_BUF + 2
     STC
-    NOP
     CMP $A, 0x4C       ; L
     JNZ MON_INPUT_IS_CALL_ADDR_NO
 
     MOV $A, MON_INPUT_BUF + 3
     STC
-    NOP
     CMP $A, 0x4C       ; L
     JNZ MON_INPUT_IS_CALL_ADDR_NO
 
     MOV $A, MON_INPUT_BUF + 4
     STC
-    NOP
     CMP $A, 0x20       ; space after CALL
     JNZ MON_INPUT_IS_CALL_ADDR_NO
 
     MOV $A, MON_INPUT_BUF + 9
     STC
-    NOP
     CMP $A, 0x00       ; exact end after address
     JNZ MON_INPUT_IS_CALL_ADDR_NO
 
@@ -708,43 +670,36 @@ MON_INPUT_IS_STACK:
 MON_INPUT_IS_CMP_RANGE_COUNT:
     MOV $A, MON_INPUT_BUF
     STC
-    NOP
     CMP $A, 0x43       ; C
     JNZ MON_INPUT_IS_CMP_RANGE_COUNT_NO
 
     MOV $A, MON_INPUT_BUF + 1
     STC
-    NOP
     CMP $A, 0x4D       ; M
     JNZ MON_INPUT_IS_CMP_RANGE_COUNT_NO
 
     MOV $A, MON_INPUT_BUF + 2
     STC
-    NOP
     CMP $A, 0x50       ; P
     JNZ MON_INPUT_IS_CMP_RANGE_COUNT_NO
 
     MOV $A, MON_INPUT_BUF + 3
     STC
-    NOP
     CMP $A, 0x20       ; space after CMP
     JNZ MON_INPUT_IS_CMP_RANGE_COUNT_NO
 
     MOV $A, MON_INPUT_BUF + 8
     STC
-    NOP
     CMP $A, 0x20       ; space between LEFT and RIGHT
     JNZ MON_INPUT_IS_CMP_RANGE_COUNT_NO
 
     MOV $A, MON_INPUT_BUF + 13
     STC
-    NOP
     CMP $A, 0x20       ; space between RIGHT and COUNT
     JNZ MON_INPUT_IS_CMP_RANGE_COUNT_NO
 
     MOV $A, MON_INPUT_BUF + 16
     STC
-    NOP
     CMP $A, 0x00       ; exact end after count byte
     JNZ MON_INPUT_IS_CMP_RANGE_COUNT_NO
 
@@ -784,37 +739,31 @@ MON_INPUT_IS_CMP_RANGE_COUNT_NO:
 MON_INPUT_IS_CP_RANGE_COUNT:
     MOV $A, MON_INPUT_BUF
     STC
-    NOP
     CMP $A, 0x43       ; C
     JNZ MON_INPUT_IS_CP_RANGE_COUNT_NO
 
     MOV $A, MON_INPUT_BUF + 1
     STC
-    NOP
     CMP $A, 0x50       ; P
     JNZ MON_INPUT_IS_CP_RANGE_COUNT_NO
 
     MOV $A, MON_INPUT_BUF + 2
     STC
-    NOP
     CMP $A, 0x20       ; space after CP
     JNZ MON_INPUT_IS_CP_RANGE_COUNT_NO
 
     MOV $A, MON_INPUT_BUF + 7
     STC
-    NOP
     CMP $A, 0x20       ; space between source and destination
     JNZ MON_INPUT_IS_CP_RANGE_COUNT_NO
 
     MOV $A, MON_INPUT_BUF + 12
     STC
-    NOP
     CMP $A, 0x20       ; space between destination and count
     JNZ MON_INPUT_IS_CP_RANGE_COUNT_NO
 
     MOV $A, MON_INPUT_BUF + 15
     STC
-    NOP
     CMP $A, 0x00       ; exact end after count byte
     JNZ MON_INPUT_IS_CP_RANGE_COUNT_NO
 
@@ -854,13 +803,11 @@ MON_INPUT_TYPE_CHAR:
 
     ; Backspace?
     STC
-    NOP
     CMP $A, 0x08
     JZ MON_INPUT_BACKSPACE
 
     ; Newline?
     STC
-    NOP
     CMP $A, 0x0A
     JZ MON_INPUT_ECHO_ONLY
 
@@ -870,7 +817,6 @@ MON_INPUT_PRINTABLE:
     ; If len == MON_INPUT_MAX, ignore the character.
     MOV $A, MON_INPUT_LEN
     STC
-    NOP
     CMP $A, MON_INPUT_MAX
     JZ MON_INPUT_DONE
 
@@ -892,7 +838,6 @@ MON_INPUT_PRINTABLE:
     ; len++
     MOV $A, MON_INPUT_LEN
     CLC
-    NOP
     ADD $A, 0x01
     MOV MON_INPUT_LEN, $A
 
@@ -905,13 +850,11 @@ MON_INPUT_BACKSPACE:
     ; If len == 0, ignore backspace.
     MOV $A, MON_INPUT_LEN
     STC
-    NOP
     CMP $A, 0x00
     JZ MON_INPUT_DONE
 
     ; len--
     STC
-    NOP
     SUB $A, 0x01
     MOV MON_INPUT_LEN, $A
 
@@ -948,19 +891,16 @@ MON_INPUT_DONE:
 MON_ASCII_TO_UPPER:
     ; Leave A unchanged when A < 'a' / 0x61.
     STC
-    NOP
     CMP $A, 0x61
     JNC MON_ASCII_TO_UPPER_DONE
 
     ; Leave A unchanged when A >= '{' / 0x7B.
     STC
-    NOP
     CMP $A, 0x7B
     JC MON_ASCII_TO_UPPER_DONE
 
     ; Convert lowercase to uppercase with A - 0x20.
     STC
-    NOP
     SUB $A, 0x20
 
 MON_ASCII_TO_UPPER_DONE:
@@ -1000,26 +940,22 @@ MON_ASCII_HEX_TO_NIBBLE:
     ; Check digit range: '0' <= char < ':'
     MOV $A, MON_HEX_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x30       ; '0'
     JNC MON_ASCII_HEX_INVALID
 
     MOV $A, MON_HEX_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x3A       ; one past '9'
     JNC MON_ASCII_HEX_DIGIT
 
     ; Check letter range: 'A' <= char < 'G'
     MOV $A, MON_HEX_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x41       ; 'A'
     JNC MON_ASCII_HEX_INVALID
 
     MOV $A, MON_HEX_CHAR_TMP
     STC
-    NOP
     CMP $A, 0x47       ; one past 'F'
     JC MON_ASCII_HEX_INVALID
 
@@ -1028,12 +964,10 @@ MON_ASCII_HEX_LETTER:
 
     ; A = char - 'A'
     STC
-    NOP
     SUB $A, 0x41
 
     ; A = A + 10
     CLC
-    NOP
     ADD $A, 0x0A
 
     MOV MON_HEX_BYTE_RESULT, $A
@@ -1050,7 +984,6 @@ MON_ASCII_HEX_DIGIT:
 
     ; A = char - '0'
     STC
-    NOP
     SUB $A, 0x30
 
     MOV MON_HEX_BYTE_RESULT, $A
@@ -1101,18 +1034,15 @@ MON_PARSE_HEX_BYTE_AT_CD:
 
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_PARSE_HEX_BYTE_INVALID
 
     ; Advance pointer to second character.
     CLC
-    NOP
     ADD $C, 0x01
     JNC .MON_PARSE_HEX_BYTE_PTR_OK
 
     CLC
-    NOP
     ADD $D, 0x01
 
 .MON_PARSE_HEX_BYTE_PTR_OK:
@@ -1124,7 +1054,6 @@ MON_PARSE_HEX_BYTE_AT_CD:
 
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_PARSE_HEX_BYTE_INVALID
 
@@ -1183,18 +1112,15 @@ MON_PARSE_HEX_BYTE_AT_CD_COMPACT:
 
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_PARSE_HEX_BYTE_COMPACT_INVALID
 
     ; Advance pointer to second character.
     CLC
-    NOP
     ADD $C, 0x01
     JNC .MON_PARSE_HEX_BYTE_COMPACT_PTR_OK
 
     CLC
-    NOP
     ADD $D, 0x01
 
 .MON_PARSE_HEX_BYTE_COMPACT_PTR_OK:
@@ -1206,7 +1132,6 @@ MON_PARSE_HEX_BYTE_AT_CD_COMPACT:
 
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_PARSE_HEX_BYTE_COMPACT_INVALID
 
@@ -1275,7 +1200,6 @@ MON_PARSE_HEX_WORD_AT_CD:
 
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_PARSE_HEX_WORD_INVALID
 
@@ -1284,12 +1208,10 @@ MON_PARSE_HEX_WORD_AT_CD:
     MOV $D, MON_HEX_PARSE_PTR_HI
 
     CLC
-    NOP
     ADD $C, 0x02
     JNC .MON_PARSE_HEX_WORD_PTR_OK
 
     CLC
-    NOP
     ADD $D, 0x01
 
 .MON_PARSE_HEX_WORD_PTR_OK:
@@ -1300,7 +1222,6 @@ MON_PARSE_HEX_WORD_AT_CD:
 
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_PARSE_HEX_WORD_INVALID
 
@@ -1356,7 +1277,6 @@ MON_PARSE_HEX_WORD_AT_CD_COMPACT:
 
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_PARSE_HEX_WORD_COMPACT_INVALID
 
@@ -1365,12 +1285,10 @@ MON_PARSE_HEX_WORD_AT_CD_COMPACT:
     MOV $D, MON_HEX_PARSE_PTR_HI
 
     CLC
-    NOP
     ADD $C, 0x02
     JNC .MON_PARSE_HEX_WORD_COMPACT_PTR_OK
 
     CLC
-    NOP
     ADD $D, 0x01
 
 .MON_PARSE_HEX_WORD_COMPACT_PTR_OK:
@@ -1381,7 +1299,6 @@ MON_PARSE_HEX_WORD_AT_CD_COMPACT:
 
     MOV $A, MON_HEX_STATUS
     STC
-    NOP
     CMP $A, 0x00
     JNZ MON_PARSE_HEX_WORD_COMPACT_INVALID
 

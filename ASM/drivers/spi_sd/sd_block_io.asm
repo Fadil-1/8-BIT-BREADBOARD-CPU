@@ -11,6 +11,10 @@
 ;   - Carry flag is used as the return status:
 ;       C = 0  success
 ;       C = 1  failure / timeout
+;
+; Original version: April 2026
+; Last Modified: May 2026
+; Fadil Isamotu
 ; ==========================================================
 
 SD_BLOCK_ADDR_MSB = 0x0100
@@ -90,12 +94,10 @@ SD_WAIT_DATA_TOKEN:
     ; carry = 1 means no borrow
     ; carry = 0 means borrow
     STC
-    NOP
     SUB $D, 0x01
     JC  .WAIT_LOOP
 
     STC
-    NOP
     SUB $C, 0x01
     JC  .WAIT_LOOP
 
@@ -185,16 +187,13 @@ SD_READ_BLOCK_1000_TO_0200_16:
 
     ; increment pointer
     CLC
-    NOP
     ADD $C, 0x01
     JNC .NO_CARRY
     CLC
-    NOP
     ADD $D, 0x01
 
 .NO_CARRY:
     STC
-    NOP
     SUB $B, 0x01
     JNZ .COPY_LOOP
 
@@ -294,18 +293,15 @@ SD_READ_BLOCK_1000_TO_RAM_512:
 
     ; increment pointer low byte
     CLC
-    NOP
     ADD $C, 0x01
     JNC .COPY_LOOP
 
     ; low byte wrapped, increment high byte
     CLC
-    NOP
     ADD $D, 0x01
 
     ; one 256-byte page completed
     STC
-    NOP
     SUB $B, 0x01
     JNZ .COPY_LOOP
 
@@ -409,18 +405,15 @@ SD_READ_BLOCK_TO_RAM_512:
 
     ; increment pointer low byte
     CLC
-    NOP
     ADD $C, 0x01
     JNC .COPY_LOOP
 
     ; low byte wrapped, increment high byte
     CLC
-    NOP
     ADD $D, 0x01
 
     ; one 256-byte page completed
     STC
-    NOP
     SUB $B, 0x01
     JNZ .COPY_LOOP
 

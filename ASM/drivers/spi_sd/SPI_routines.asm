@@ -22,6 +22,10 @@
 ;   - Chip-select signals are active low.
 ;   - SCLK idles low in the sequences used here.
 ;   - MOSI is explicitly updated before each write clock edge.
+;
+; Original version: April 2026
+; Last Modified: May 2026
+; Fadil Isamotu
 ; ==========================================================
 
 
@@ -92,7 +96,6 @@ POWER_UP_SD_CARD:
     JSR  SPI_WRITE_BYTE
 
     STC
-    NOP
     SUB  $D, 1
     JNZ  .START_SPI_LOOP
 
@@ -130,9 +133,6 @@ SPI_READ_BYTE:
     OR   $A, SCLK
     OUT  SPI_PORT, $A
 
-    NOP
-    NOP
-
     INP  $A, SPI_PORT
 
     ; Shift the current result byte left to make room for the
@@ -140,9 +140,6 @@ SPI_READ_BYTE:
     ; the MISO bit reaches carry.
     LSL  $B
     LSL  $A
-
-    NOP
-
     ; Add only the carry contribution into the low bit of $B.
     ADD  $B, 0
 
@@ -153,7 +150,6 @@ SPI_READ_BYTE:
     OUT  SPI_PORT, $A
 
     STC
-    NOP
     SUB  $C, 1
     JNZ  .READ_LOOP
 
@@ -207,14 +203,10 @@ SPI_WRITE_BYTE:
 
     OR   $A, SCLK
     OUT  SPI_PORT, $A
-
-    NOP
-
     AND  $A, 0xFF - SCLK
     OUT  SPI_PORT, $A
 
     STC
-    NOP
     SUB  $C, 1
     JNZ  .SEND_LOOP
 

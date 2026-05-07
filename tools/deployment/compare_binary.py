@@ -9,9 +9,6 @@ Exit status:
   0 = files match
   1 = files differ
   2 = error
-
-Original version: May 2026
-Fadil Isamotu
 """
 
 from __future__ import annotations

@@ -34,6 +34,9 @@
 #
 # Font source:
 #   Adafruit_GFX glcdfont.c fixed-space ASCII font table.
+#
+# Original version: May 2026
+# Fadil Isamotu
 # ==========================================================
 
 from pathlib import Path
@@ -241,12 +244,10 @@ OLED5_CLEAR_TEXT_SCREEN:
 .OLED5_CLEAR_TEXT_COL:
     OLD $A
     STC
-    NOP
     SUB $B, 0x01
     JNZ .OLED5_CLEAR_TEXT_COL
 
     STC
-    NOP
     SUB $D, 0x01
     JNZ .OLED5_CLEAR_TEXT_ROW
 
@@ -257,17 +258,14 @@ OLED5_CLEAR_TEXT_SCREEN:
 
 OLED5_PUTC:
     STC
-    NOP
     CMP $A, 0x0A
     JZ OLED5_PUTC_NEWLINE
 
     STC
-    NOP
     CMP $A, 0x0D
     JZ OLED5_PUTC_CR
 
     STC
-    NOP
     CMP $A, 0x08
     JZ OLED5_PUTC_BACKSPACE
 
@@ -294,12 +292,10 @@ OLED5_CARRIAGE_RETURN:
 OLED5_BACKSPACE:
     MOV $A, OLED_CURSOR_COL
     STC
-    NOP
     CMP $A, 0x00
     JZ OLED5_BACKSPACE_DONE
 
     STC
-    NOP
     SUB $A, 0x01
     MOV OLED_CURSOR_COL, $A
 
@@ -308,7 +304,6 @@ OLED5_BACKSPACE:
 
     MOV $A, OLED_CURSOR_COL
     STC
-    NOP
     SUB $A, 0x01
     MOV OLED_CURSOR_COL, $A
 
@@ -323,17 +318,13 @@ OLED5_CLEAR_CURRENT_CELL_DIRECT:
     MOV $A, OLED_CURSOR_COL
     MOV $B, $A
     CLC
-    NOP
     ADD $A, $B
     CLC
-    NOP
     ADD $A, $B
     CLC
-    NOP
     ADD $A, OLED_TEXT_ORIGIN_X
     MOV OLED_WIN_COL_START, $A
     CLC
-    NOP
     ADD $A, 0x02
     MOV OLED_WIN_COL_END, $A
 
@@ -342,11 +333,9 @@ OLED5_CLEAR_CURRENT_CELL_DIRECT:
     LSL $A
     LSL $A
     CLC
-    NOP
     ADD $A, OLED_TEXT_ORIGIN_Y
     MOV OLED_WIN_ROW_START, $A
     CLC
-    NOP
     ADD $A, 0x07
     MOV OLED_WIN_ROW_END, $A
 
@@ -375,12 +364,10 @@ OLED5_CLEAR_CURRENT_CELL_DIRECT:
 .OLED5_CLEAR_CELL_COL:
     OLD $A
     STC
-    NOP
     SUB $B, 0x01
     JNZ .OLED5_CLEAR_CELL_COL
 
     STC
-    NOP
     SUB $D, 0x01
     JNZ .OLED5_CLEAR_CELL_ROW
 
@@ -397,17 +384,13 @@ OLED5_DRAW_CURRENT_CELL_BLOCK_DIRECT:
     MOV $A, OLED_CURSOR_COL
     MOV $B, $A
     CLC
-    NOP
     ADD $A, $B
     CLC
-    NOP
     ADD $A, $B
     CLC
-    NOP
     ADD $A, OLED_TEXT_ORIGIN_X
     MOV OLED_WIN_COL_START, $A
     CLC
-    NOP
     ADD $A, 0x02
     MOV OLED_WIN_COL_END, $A
 
@@ -416,11 +399,9 @@ OLED5_DRAW_CURRENT_CELL_BLOCK_DIRECT:
     LSL $A
     LSL $A
     CLC
-    NOP
     ADD $A, OLED_TEXT_ORIGIN_Y
     MOV OLED_WIN_ROW_START, $A
     CLC
-    NOP
     ADD $A, 0x07
     MOV OLED_WIN_ROW_END, $A
 
@@ -449,12 +430,10 @@ OLED5_DRAW_CURRENT_CELL_BLOCK_DIRECT:
 .OLED5_DRAW_CELL_BLOCK_COL:
     OLD $A
     STC
-    NOP
     SUB $B, 0x01
     JNZ .OLED5_DRAW_CELL_BLOCK_COL
 
     STC
-    NOP
     SUB $D, 0x01
     JNZ .OLED5_DRAW_CELL_BLOCK_ROW
 
@@ -496,23 +475,19 @@ OLED5_TYPE_CHAR_WITH_CURSOR:
 
 OLED5_PRINT_HEX_NIBBLE:
     STC
-    NOP
     CMP $A, 0x0A
     JC .OLED5_HEX_LETTER
 
 .OLED5_HEX_DIGIT:
     CLC
-    NOP
     ADD $A, 0x30
     JSR OLED5_PUTC
     RTS
 
 .OLED5_HEX_LETTER:
     STC
-    NOP
     SUB $A, 0x0A
     CLC
-    NOP
     ADD $A, 0x41
     JSR OLED5_PUTC
     RTS
@@ -674,13 +649,11 @@ def build_library() -> str:
         "    ; row++",
         "    MOV $A, OLED_CURSOR_ROW",
         "    CLC",
-        "    NOP",
         "    ADD $A, 0x01",
         "    MOV OLED_CURSOR_ROW, $A",
         "",
         "    ; If row == OLED5_MAX_ROWS, wrap back to row 0.",
         "    STC",
-        "    NOP",
         "    CMP $A, OLED5_MAX_ROWS",
         "    JZ OLED5_NEWLINE_WRAP_TOP",
         "",
@@ -695,13 +668,11 @@ def build_library() -> str:
         "    ; col++",
         "    MOV $A, OLED_CURSOR_COL",
         "    CLC",
-        "    NOP",
         "    ADD $A, 0x01",
         "    MOV OLED_CURSOR_COL, $A",
         "",
         "    ; If col == OLED5_MAX_COLS, wrap to the next row.",
         "    STC",
-        "    NOP",
         "    CMP $A, OLED5_MAX_COLS",
         "    JZ OLED5_ADVANCE_CURSOR_WRAP",
         "",
@@ -713,14 +684,12 @@ def build_library() -> str:
         "",
         "OLED5_CLEAR_CURRENT_LINE_LOOP:",
         "    STC",
-        "    NOP",
         "    CMP $B, 0x00",
         "    JZ OLED5_CLEAR_CURRENT_LINE_DONE",
         "",
         "    JSR OLED5_CHAR_SPACE",
         "",
         "    STC",
-        "    NOP",
         "    SUB $B, 0x01",
         "    JMP OLED5_CLEAR_CURRENT_LINE_LOOP",
         "",
@@ -731,12 +700,10 @@ def build_library() -> str:
         "",
         "OLED5_INC_CD:",
         "    CLC",
-        "    NOP",
         "    ADD $C, 0x01",
         "    JNC OLED5_INC_CD_DONE",
         "",
         "    CLC",
-        "    NOP",
         "    ADD $D, 0x01",
         "",
         "OLED5_INC_CD_DONE:",
@@ -747,12 +714,10 @@ def build_library() -> str:
         "    MOV $A, [$CD]",
         "",
         "    STC",
-        "    NOP",
         "    CMP $A, 0x00",
         "    JZ OLED5_DRAW_STRING_DONE",
         "",
         "    STC",
-        "    NOP",
         "    CMP $A, 0x0A",
         "    JZ OLED5_DRAW_STRING_NEWLINE",
         "",
@@ -778,7 +743,6 @@ def build_library() -> str:
         lines.extend([
             "    MOV $A, OLED_CHAR_TMP",
             "    STC",
-            "    NOP",
             f"    CMP $A, 0x{ord(ch):02X}       ; {cmp_comment_for_char(ch)}",
             f"    JZ OLED5_CHAR_{label}",
             "",
@@ -795,16 +759,13 @@ def build_library() -> str:
         "",
         "OLED5_CURSOR_X_LOOP:",
         "    STC",
-        "    NOP",
         "    CMP $B, 0x00",
         "    JZ OLED5_CURSOR_X_DONE",
         "",
         "    CLC",
-        "    NOP",
         "    ADD $A, 0x03",
         "",
         "    STC",
-        "    NOP",
         "    SUB $B, 0x01",
         "    JMP OLED5_CURSOR_X_LOOP",
         "",
@@ -817,16 +778,13 @@ def build_library() -> str:
         "",
         "OLED5_CURSOR_Y_LOOP:",
         "    STC",
-        "    NOP",
         "    CMP $B, 0x00",
         "    JZ OLED5_CURSOR_Y_DONE",
         "",
         "    CLC",
-        "    NOP",
         "    ADD $A, 0x08",
         "",
         "    STC",
-        "    NOP",
         "    SUB $B, 0x01",
         "    JMP OLED5_CURSOR_Y_LOOP",
         "",
@@ -843,7 +801,6 @@ def build_library() -> str:
         "    MOV $A, OLED_GLYPH_BASE_X",
         "    OLC $A",
         "    CLC",
-        "    NOP",
         "    ADD $A, 0x02",
         "    OLC $A",
         "",
@@ -853,7 +810,6 @@ def build_library() -> str:
         "    MOV $A, OLED_GLYPH_BASE_Y",
         "    OLC $A",
         "    CLC",
-        "    NOP",
         "    ADD $A, 0x07",
         "    OLC $A",
         "",

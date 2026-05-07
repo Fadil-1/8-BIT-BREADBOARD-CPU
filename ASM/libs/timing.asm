@@ -30,12 +30,10 @@ DELAY_SHORT:
     NOP
 
     STC
-    NOP
     SUB  $B, 0x01
     JNZ  .DS_INNER
 
     STC
-    NOP
     SUB  $A, 0x01
     JNZ  .DS_OUTER
 
@@ -66,12 +64,10 @@ DELAY_LONG:
     NOP
 
     STC
-    NOP
     SUB  $B, 0x01
     JNZ  .DL_INNER
 
     STC
-    NOP
     SUB  $A, 0x01
     JNZ  .DL_OUTER
 
@@ -102,12 +98,10 @@ DELAY_VERY_LONG:
     NOP
 
     STC
-    NOP
     SUB  $B, 0x01
     JNZ  .DVL_INNER
 
     STC
-    NOP
     SUB  $A, 0x01
     JNZ  .DVL_OUTER
 
@@ -142,17 +136,14 @@ DELAY_VERY_VERY_LONG:
     NOP
 
     STC
-    NOP
     SUB  $B, 0x01
     JNZ  .DVVL_INNER
 
     STC
-    NOP
     SUB  $A, 0x01
     JNZ  .DVVL_OUTER
 
     STC
-    NOP
     SUB  $C, 0x01
     JNZ  .DVVL_SUPER
 

@@ -53,10 +53,8 @@ OLEDG_SET_WINDOW_ARGS:
     OLC $A
     MOV $A, OLED_ARG_W
     STC
-    NOP
     SUB $A, 0x01
     CLC
-    NOP
     ADD $A, OLED_ARG_X
     OLC $A
 
@@ -66,10 +64,8 @@ OLEDG_SET_WINDOW_ARGS:
     OLC $A
     MOV $A, OLED_ARG_H
     STC
-    NOP
     SUB $A, 0x01
     CLC
-    NOP
     ADD $A, OLED_ARG_Y
     OLC $A
 
@@ -117,12 +113,10 @@ OLEDG_CLEAR_SAFE_AREA:
 .OLEDG_CLEAR_SAFE_COL:
     OLD $A
     STC
-    NOP
     SUB $B, 0x01
     JNZ .OLEDG_CLEAR_SAFE_COL
 
     STC
-    NOP
     SUB $D, 0x01
     JNZ .OLEDG_CLEAR_SAFE_ROW
 
@@ -139,13 +133,11 @@ OLEDG_FILL_RECT:
 
     MOV $A, OLED_ARG_W
     STC
-    NOP
     CMP $A, 0x00
     JZ OLEDG_FILL_RECT_DONE
 
     MOV $A, OLED_ARG_H
     STC
-    NOP
     CMP $A, 0x00
     JZ OLEDG_FILL_RECT_DONE
 
@@ -163,12 +155,10 @@ OLEDG_FILL_RECT:
 .OLEDG_FILL_RECT_COL:
     OLD $A
     STC
-    NOP
     SUB $B, 0x01
     JNZ .OLEDG_FILL_RECT_COL
 
     STC
-    NOP
     SUB $D, 0x01
     JNZ .OLEDG_FILL_RECT_ROW
 
@@ -286,16 +276,13 @@ OLEDG_DRAW_RECT:
     ; bottom edge
     MOV $A, OLEDG_SAVE_H
     STC
-    NOP
     CMP $A, 0x01
     JZ OLEDG_DRAW_RECT_SKIP_BOTTOM
 
     MOV $A, OLEDG_SAVE_H
     STC
-    NOP
     SUB $A, 0x01
     CLC
-    NOP
     ADD $A, OLEDG_SAVE_Y
     MOV OLED_ARG_Y, $A
     MOV $A, OLEDG_SAVE_X
@@ -317,16 +304,13 @@ OLEDG_DRAW_RECT_SKIP_BOTTOM:
     ; right edge
     MOV $A, OLEDG_SAVE_W
     STC
-    NOP
     CMP $A, 0x01
     JZ OLEDG_DRAW_RECT_DONE
 
     MOV $A, OLEDG_SAVE_W
     STC
-    NOP
     SUB $A, 0x01
     CLC
-    NOP
     ADD $A, OLEDG_SAVE_X
     MOV OLED_ARG_X, $A
     MOV $A, OLEDG_SAVE_Y
@@ -376,25 +360,21 @@ OLEDG_DRAW_PROGRESS_BAR:
     ; Clear the bar interior.
     MOV $A, OLEDG_SAVE_X
     CLC
-    NOP
     ADD $A, 0x01
     MOV OLED_ARG_X, $A
 
     MOV $A, OLEDG_SAVE_Y
     CLC
-    NOP
     ADD $A, 0x01
     MOV OLED_ARG_Y, $A
 
     MOV $A, OLEDG_SAVE_W
     STC
-    NOP
     SUB $A, 0x02
     MOV OLED_ARG_W, $A
 
     MOV $A, OLEDG_SAVE_H
     STC
-    NOP
     SUB $A, 0x02
     MOV OLED_ARG_H, $A
 
@@ -403,7 +383,6 @@ OLEDG_DRAW_PROGRESS_BAR:
     ; Draw the filled part.
     MOV $A, OLEDG_PROGRESS_VALUE
     STC
-    NOP
     CMP $A, 0x00
     JZ OLEDG_DRAW_PROGRESS_BAR_DONE
 
