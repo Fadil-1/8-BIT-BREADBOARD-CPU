@@ -4,7 +4,8 @@ BT1 boot descriptor generator for the F8-BB breadboard CPU.
 
 Creates a 512-byte BT1 descriptor sector for the SD bootstrap flow.
 
-Original version: May 2026
+Original version: April 2026
+Updated: May 2026
 Fadil Isamotu
 """
 

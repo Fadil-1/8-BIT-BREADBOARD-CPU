@@ -14,6 +14,10 @@
 ; Return-status convention:
 ;   carry clear = success
 ;   carry set   = failure / unexpected response / timeout
+;
+; Original version: April 2026
+; Last Modified: May 2026
+; Fadil Isamotu
 ; ==========================================================
 
 
@@ -40,7 +44,6 @@ WAIT_R1:
     JNZ .DONE
 
     STC
-    NOP
     SUB $D, 1
     JNZ .WAIT_R1_LOOP
 
@@ -82,7 +85,6 @@ CMD0:
     ; Deselecting devices can disturb flags, so the carry result
     ; is saved and restored around the deselect helper.
     PSF
-    NOP
     JSR DESELECT_ALL_SPI_DEVICES
     PLF
     RTS
@@ -202,7 +204,6 @@ INIT_SD:
 .ITERATION_FAIL:
     JSR DESELECT_ALL_SPI_DEVICES
     STC
-    NOP
     SUB $D, 1
     JNZ .INIT_LOOP
 

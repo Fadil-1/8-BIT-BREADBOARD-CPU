@@ -1,0 +1,1231 @@
+; ==========================================================
+; primes.asm
+; ==========================================================
+; 32-bit Prime Numbers Finder.
+;
+; Original version: May 2026
+; Fadil Isamotu
+; ==========================================================
+
+
+#addr 0x0200
+#include "../../../ruledef.asm"
+#include "../../../drivers/oled/oled_constants.asm"
+
+JMP START
+
+#include "../../../drivers/oled/oled_lowlevel.asm"
+#include "../../../drivers/oled/oled_text_5x7.asm"
+#include "../../../libs/timing.asm"
+
+
+; Scratch RAM for the SD-loaded showcase.
+; Multi-byte values are little-endian: B0 is the low byte.
+SHOWCASE_SWEEP_ROW     = 0x7300
+PRIME_CAND_B0          = 0x7301
+PRIME_CAND_B1          = 0x7302
+PRIME_CAND_B2          = 0x7303
+PRIME_CAND_B3          = 0x7304
+PRIME_DIV_B0           = 0x7305
+PRIME_DIV_B1           = 0x7306
+PRIME_DIV_SQ_B0        = 0x7307
+PRIME_DIV_SQ_B1        = 0x7308
+PRIME_DIV_SQ_B2        = 0x7309
+PRIME_DIV_SQ_B3        = 0x730A
+PRIME_COUNT_B0         = 0x730B
+PRIME_COUNT_B1         = 0x730C
+PRIME_COUNT_B2         = 0x730D
+PRIME_COUNT_B3         = 0x730E
+PRIME_FLAG             = 0x730F
+PRIME_MOD_ZERO         = 0x7310
+PRIME_SQ_GT_FLAG       = 0x7311
+PRIME_NUM_B0           = 0x7312
+PRIME_NUM_B1           = 0x7313
+PRIME_NUM_B2           = 0x7314
+PRIME_NUM_B3           = 0x7315
+PRIME_REM_B0           = 0x7316
+PRIME_REM_B1           = 0x7317
+PRIME_REM_B2           = 0x7318
+PRIME_REM_B3           = 0x7319
+PRIME_DEC_B0           = 0x731A
+PRIME_DEC_B1           = 0x731B
+PRIME_DEC_B2           = 0x731C
+PRIME_DEC_B3           = 0x731D
+PRIME_DEC_CONST_B0     = 0x731E
+PRIME_DEC_CONST_B1     = 0x731F
+PRIME_DEC_CONST_B2     = 0x7320
+PRIME_DEC_CONST_B3     = 0x7321
+PRIME_DEC_DIGIT        = 0x7322
+PRIME_DEC_STARTED      = 0x7323
+PRIME_DEC_FORCE        = 0x7324
+PRIME_DEC_DATA_MODE    = 0x7325
+PRIME_DEC_CHAR_TMP     = 0x7326
+PRIME_OUT_COL          = 0x7327
+PRIME_OUT_ROW          = 0x7328
+PRIME_REM_GE_FLAG      = 0x7329
+
+
+START:
+    MOV $CLK, 0x07
+
+    JSR OLED_INIT
+    JSR OLED5_SET_DEFAULT_ORIGIN
+    JSR OLED5_HOME
+    JSR OLED5_CLEAR_TEXT_SCREEN
+    JSR OLED5_HOME
+
+    JSR PRINT_SPLASH
+    JSR SHOWCASE_DELAY_MEDIUM
+    JSR SHOWCASE_START
+
+DONE:
+    JMP DONE
+
+
+PRINT_SPLASH:
+    ; Centered boot screen.
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+
+    MOV $A, 0x46       ; F
+    JSR OLED5_PUTC
+    MOV $A, 0x38       ; 8
+    JSR OLED5_PUTC
+    MOV $A, 0x2D       ; -
+    JSR OLED5_PUTC
+    MOV $A, 0x42       ; B
+    JSR OLED5_PUTC
+    MOV $A, 0x42       ; B
+    JSR OLED5_PUTC
+
+    MOV $A, 0x0A
+    JSR OLED5_PUTC
+    MOV $A, 0x0A
+    JSR OLED5_PUTC
+
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+
+    MOV $A, 0x4C       ; L
+    JSR OLED5_PUTC
+    MOV $A, 0x4F       ; O
+    JSR OLED5_PUTC
+    MOV $A, 0x41       ; A
+    JSR OLED5_PUTC
+    MOV $A, 0x44       ; D
+    JSR OLED5_PUTC
+    MOV $A, 0x45       ; E
+    JSR OLED5_PUTC
+    MOV $A, 0x44       ; D
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x46       ; F
+    JSR OLED5_PUTC
+    MOV $A, 0x52       ; R
+    JSR OLED5_PUTC
+    MOV $A, 0x4F       ; O
+    JSR OLED5_PUTC
+    MOV $A, 0x4D       ; M
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x53       ; S
+    JSR OLED5_PUTC
+    MOV $A, 0x44       ; D
+    JSR OLED5_PUTC
+
+    MOV $A, 0x0A
+    JSR OLED5_PUTC
+    MOV $A, 0x0A
+    JSR OLED5_PUTC
+
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+
+    MOV $A, 0x53       ; S
+    JSR OLED5_PUTC
+    MOV $A, 0x54       ; T
+    JSR OLED5_PUTC
+    MOV $A, 0x41       ; A
+    JSR OLED5_PUTC
+    MOV $A, 0x47       ; G
+    JSR OLED5_PUTC
+    MOV $A, 0x45       ; E
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x32       ; 2
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x4F       ; O
+    JSR OLED5_PUTC
+    MOV $A, 0x4B       ; K
+    JSR OLED5_PUTC
+
+    JSR BLINK_CURSOR_AFTER_OK
+
+    RTS
+
+
+BLINK_CURSOR_AFTER_OK:
+    PSH $C
+
+    MOV $C, 0x08
+
+.BLINK_LOOP:
+    JSR OLED5_CURSOR_SHOW
+    JSR SHOWCASE_DELAY_CURSOR
+    JSR OLED5_CURSOR_HIDE
+    JSR SHOWCASE_DELAY_CURSOR
+
+    STC
+    SUB $C, 0x01
+    JNZ .BLINK_LOOP
+
+    PUL $C
+    RTS
+
+
+SHOWCASE_START:
+    JSR OLED5_CLEAR_TEXT_SCREEN
+    JSR OLED5_HOME
+    JSR SHOWCASE_DELAY_MEDIUM
+    JSR SHOWCASE_BLOCK_SWEEP_ALL_ROWS
+    JSR PRIME_SCREEN_INIT
+    JMP PRIME_LOOP
+
+
+SHOWCASE_BLOCK_SWEEP_ALL_ROWS:
+    MOV $B, 0x02
+    JSR SHOWCASE_BLOCK_SWEEP_FAST_ROW
+
+    MOV $B, 0x04
+    JSR SHOWCASE_BLOCK_SWEEP_FAST_ROW
+
+    MOV $B, 0x06
+    JSR SHOWCASE_BLOCK_SWEEP_FAST_ROW
+
+    RTS
+
+
+SHOWCASE_BLOCK_SWEEP_FAST_ROW:
+    MOV SHOWCASE_SWEEP_ROW, $B
+    PSH $D
+
+    MOV $D, 0x03
+
+.SWEEP_CYCLE:
+    JSR SHOWCASE_SWEEP_RIGHT
+    JSR SHOWCASE_SWEEP_LEFT
+
+    STC
+    SUB $D, 0x01
+    JNZ .SWEEP_CYCLE
+
+    PUL $D
+    RTS
+
+
+SHOWCASE_SWEEP_RIGHT:
+    MOV $C, 0x00
+
+.RIGHT_LOOP:
+    MOV $A, $C
+    MOV $B, SHOWCASE_SWEEP_ROW
+    JSR OLED5_SET_CURSOR
+    JSR OLED5_DRAW_CURRENT_CELL_BLOCK_DIRECT
+    JSR SHOWCASE_DELAY_FAST
+    JSR OLED5_CLEAR_CURRENT_CELL_DIRECT
+
+    CLC
+    ADD $C, 0x01
+
+    STC
+    CMP $C, OLED5_MAX_COLS
+    JNZ .RIGHT_LOOP
+
+    RTS
+
+
+SHOWCASE_SWEEP_LEFT:
+    MOV $C, 0x14
+
+.LEFT_LOOP:
+    MOV $A, $C
+    MOV $B, SHOWCASE_SWEEP_ROW
+    JSR OLED5_SET_CURSOR
+    JSR OLED5_DRAW_CURRENT_CELL_BLOCK_DIRECT
+    JSR SHOWCASE_DELAY_FAST
+    JSR OLED5_CLEAR_CURRENT_CELL_DIRECT
+
+    STC
+    CMP $C, 0x00
+    JZ .LEFT_DONE
+
+    STC
+    SUB $C, 0x01
+    JMP .LEFT_LOOP
+
+.LEFT_DONE:
+    RTS
+
+
+PRIME_SCREEN_INIT:
+    JSR OLED5_CLEAR_TEXT_SCREEN
+    JSR OLED5_HOME
+    JSR SHOWCASE_DELAY_MEDIUM
+
+    ;    FINDING PRIMES
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+
+    MOV $A, 0x46       ; F
+    JSR OLED5_PUTC
+    MOV $A, 0x49       ; I
+    JSR OLED5_PUTC
+    MOV $A, 0x4E       ; N
+    JSR OLED5_PUTC
+    MOV $A, 0x44       ; D
+    JSR OLED5_PUTC
+    MOV $A, 0x49       ; I
+    JSR OLED5_PUTC
+    MOV $A, 0x4E       ; N
+    JSR OLED5_PUTC
+    MOV $A, 0x47       ; G
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x50       ; P
+    JSR OLED5_PUTC
+    MOV $A, 0x52       ; R
+    JSR OLED5_PUTC
+    MOV $A, 0x49       ; I
+    JSR OLED5_PUTC
+    MOV $A, 0x4D       ; M
+    JSR OLED5_PUTC
+    MOV $A, 0x45       ; E
+    JSR OLED5_PUTC
+    MOV $A, 0x53       ; S
+    JSR OLED5_PUTC
+
+    MOV $A, 0x0A
+    JSR OLED5_PUTC
+    MOV $A, 0x0A
+    JSR OLED5_PUTC
+
+    ; # FOUND 0
+    MOV $A, 0x23       ; #
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x46       ; F
+    JSR OLED5_PUTC
+    MOV $A, 0x4F       ; O
+    JSR OLED5_PUTC
+    MOV $A, 0x55       ; U
+    JSR OLED5_PUTC
+    MOV $A, 0x4E       ; N
+    JSR OLED5_PUTC
+    MOV $A, 0x44       ; D
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x30       ; 0
+    JSR OLED5_PUTC
+
+    MOV $A, 0x0A
+    JSR OLED5_PUTC
+    MOV $A, 0x0A
+    JSR OLED5_PUTC
+
+    ; Candidate starts at 2. Later candidates are odd only.
+    MOV $A, 0x00
+    MOV PRIME_COUNT_B0, $A
+    MOV PRIME_COUNT_B1, $A
+    MOV PRIME_COUNT_B2, $A
+    MOV PRIME_COUNT_B3, $A
+    MOV PRIME_CAND_B1, $A
+    MOV PRIME_CAND_B2, $A
+    MOV PRIME_CAND_B3, $A
+
+    MOV $A, 0x02
+    MOV PRIME_CAND_B0, $A
+
+    MOV $A, 0x00
+    MOV $B, 0x04
+    JSR OLED5_SET_CURSOR
+
+    RTS
+
+
+PRIME_LOOP:
+    MOV $A, OLED_CURSOR_COL
+    MOV PRIME_OUT_COL, $A
+    MOV $A, OLED_CURSOR_ROW
+    MOV PRIME_OUT_ROW, $A
+
+    JSR PRIME_TEST_CURRENT
+
+    MOV $A, PRIME_FLAG
+    STC
+    CMP $A, 0x00
+    JZ .NOT_PRIME
+
+    JSR PRIME_INCREMENT_COUNT
+    JSR PRIME_UPDATE_COUNT_DISPLAY
+
+    MOV $A, PRIME_OUT_COL
+    MOV $B, PRIME_OUT_ROW
+    JSR OLED5_SET_CURSOR
+
+    JSR PRIME_PRINT_CANDIDATE_U32_DEC
+    JSR PRIME_NEWLINE_AFTER_NUMBER
+    JSR SHOWCASE_DELAY_FAST
+
+.NOT_PRIME:
+    JSR PRIME_ADVANCE_CANDIDATE
+    JMP PRIME_LOOP
+
+
+PRIME_TEST_CURRENT:
+    ; Trial division uses odd divisors. divisor^2 > candidate marks a prime.
+    MOV $A, 0x00
+    MOV PRIME_FLAG, $A
+
+    MOV $A, PRIME_CAND_B3
+    STC
+    CMP $A, 0x00
+    JNZ .SETUP_DIVISOR
+    MOV $A, PRIME_CAND_B2
+    STC
+    CMP $A, 0x00
+    JNZ .SETUP_DIVISOR
+    MOV $A, PRIME_CAND_B1
+    STC
+    CMP $A, 0x00
+    JNZ .SETUP_DIVISOR
+    MOV $A, PRIME_CAND_B0
+    STC
+    CMP $A, 0x02
+    JZ .IS_PRIME
+
+.SETUP_DIVISOR:
+    MOV $A, 0x03
+    MOV PRIME_DIV_B0, $A
+    MOV $A, 0x00
+    MOV PRIME_DIV_B1, $A
+
+    MOV $A, 0x09
+    MOV PRIME_DIV_SQ_B0, $A
+    MOV $A, 0x00
+    MOV PRIME_DIV_SQ_B1, $A
+    MOV PRIME_DIV_SQ_B2, $A
+    MOV PRIME_DIV_SQ_B3, $A
+
+.TEST_LOOP:
+    JSR PRIME_CHECK_SQUARE_GT_CANDIDATE
+    MOV $A, PRIME_SQ_GT_FLAG
+    STC
+    CMP $A, 0x00
+    JNZ .IS_PRIME
+
+    JSR PRIME_MOD_CURRENT_BY_DIV
+    MOV $A, PRIME_MOD_ZERO
+    STC
+    CMP $A, 0x00
+    JNZ .NOT_PRIME_RESULT
+
+    ; 65535 is the largest divisor needed for a 32-bit candidate.
+    MOV $A, PRIME_DIV_B1
+    STC
+    CMP $A, 0xFF
+    JNZ .NEXT_DIVISOR
+    MOV $A, PRIME_DIV_B0
+    STC
+    CMP $A, 0xFF
+    JZ .IS_PRIME
+
+.NEXT_DIVISOR:
+    JSR PRIME_UPDATE_DIVISOR_AND_SQUARE
+    JMP .TEST_LOOP
+
+.IS_PRIME:
+    MOV $A, 0x01
+    MOV PRIME_FLAG, $A
+    RTS
+
+.NOT_PRIME_RESULT:
+    RTS
+
+
+PRIME_CHECK_SQUARE_GT_CANDIDATE:
+    ; Flag becomes 1 when divisor^2 is larger than the current candidate.
+    MOV $A, 0x00
+    MOV PRIME_SQ_GT_FLAG, $A
+
+    MOV $A, PRIME_CAND_B3
+    STC
+    CMP $A, PRIME_DIV_SQ_B3
+    JNC .SQUARE_GT
+    JZ .CHECK_B2
+    RTS
+
+.CHECK_B2:
+    MOV $A, PRIME_CAND_B2
+    STC
+    CMP $A, PRIME_DIV_SQ_B2
+    JNC .SQUARE_GT
+    JZ .CHECK_B1
+    RTS
+
+.CHECK_B1:
+    MOV $A, PRIME_CAND_B1
+    STC
+    CMP $A, PRIME_DIV_SQ_B1
+    JNC .SQUARE_GT
+    JZ .CHECK_B0
+    RTS
+
+.CHECK_B0:
+    MOV $A, PRIME_CAND_B0
+    STC
+    CMP $A, PRIME_DIV_SQ_B0
+    JNC .SQUARE_GT
+    RTS
+
+.SQUARE_GT:
+    MOV $A, 0x01
+    MOV PRIME_SQ_GT_FLAG, $A
+    RTS
+
+
+PRIME_MOD_CURRENT_BY_DIV:
+    ; 32-step binary remainder. Divisor is 16-bit, candidate is 32-bit.
+    MOV $A, PRIME_CAND_B0
+    MOV PRIME_NUM_B0, $A
+    MOV $A, PRIME_CAND_B1
+    MOV PRIME_NUM_B1, $A
+    MOV $A, PRIME_CAND_B2
+    MOV PRIME_NUM_B2, $A
+    MOV $A, PRIME_CAND_B3
+    MOV PRIME_NUM_B3, $A
+
+    MOV $A, 0x00
+    MOV PRIME_REM_B0, $A
+    MOV PRIME_REM_B1, $A
+    MOV PRIME_REM_B2, $A
+    MOV PRIME_REM_B3, $A
+    MOV PRIME_MOD_ZERO, $A
+
+    MOV $C, 0x20
+
+.MOD_BIT_LOOP:
+    CLC
+    MOV $A, PRIME_NUM_B0
+    ADD $A, PRIME_NUM_B0
+    MOV PRIME_NUM_B0, $A
+    MOV $A, PRIME_NUM_B1
+    ADD $A, PRIME_NUM_B1
+    MOV PRIME_NUM_B1, $A
+    MOV $A, PRIME_NUM_B2
+    ADD $A, PRIME_NUM_B2
+    MOV PRIME_NUM_B2, $A
+    MOV $A, PRIME_NUM_B3
+    ADD $A, PRIME_NUM_B3
+    MOV PRIME_NUM_B3, $A
+
+    MOV $A, PRIME_REM_B0
+    ADD $A, PRIME_REM_B0
+    MOV PRIME_REM_B0, $A
+    MOV $A, PRIME_REM_B1
+    ADD $A, PRIME_REM_B1
+    MOV PRIME_REM_B1, $A
+    MOV $A, PRIME_REM_B2
+    ADD $A, PRIME_REM_B2
+    MOV PRIME_REM_B2, $A
+    MOV $A, PRIME_REM_B3
+    ADD $A, PRIME_REM_B3
+    MOV PRIME_REM_B3, $A
+
+    JSR PRIME_REM_GE_DIVISOR
+    MOV $A, PRIME_REM_GE_FLAG
+    STC
+    CMP $A, 0x00
+    JZ .NEXT_BIT
+
+    JSR PRIME_SUB_DIVISOR_FROM_REM
+
+.NEXT_BIT:
+    STC
+    SUB $C, 0x01
+    JNZ .MOD_BIT_LOOP
+
+    JSR PRIME_CHECK_REM_ZERO
+    RTS
+
+
+PRIME_REM_GE_DIVISOR:
+    MOV $A, 0x00
+    MOV PRIME_REM_GE_FLAG, $A
+
+    MOV $A, PRIME_REM_B3
+    STC
+    CMP $A, 0x00
+    JNZ .YES
+    MOV $A, PRIME_REM_B2
+    STC
+    CMP $A, 0x00
+    JNZ .YES
+
+    MOV $A, PRIME_REM_B1
+    STC
+    CMP $A, PRIME_DIV_B1
+    JNC .NO
+    JZ .CHECK_LOW
+    JMP .YES
+
+.CHECK_LOW:
+    MOV $A, PRIME_REM_B0
+    STC
+    CMP $A, PRIME_DIV_B0
+    JNC .NO
+
+.YES:
+    MOV $A, 0x01
+    MOV PRIME_REM_GE_FLAG, $A
+.NO:
+    RTS
+
+
+PRIME_SUB_DIVISOR_FROM_REM:
+    MOV $A, PRIME_REM_B0
+    STC
+    SUB $A, PRIME_DIV_B0
+    MOV PRIME_REM_B0, $A
+
+    MOV $A, PRIME_REM_B1
+    SUB $A, PRIME_DIV_B1
+    MOV PRIME_REM_B1, $A
+
+    MOV $A, PRIME_REM_B2
+    SUB $A, 0x00
+    MOV PRIME_REM_B2, $A
+
+    MOV $A, PRIME_REM_B3
+    SUB $A, 0x00
+    MOV PRIME_REM_B3, $A
+
+    RTS
+
+
+PRIME_CHECK_REM_ZERO:
+    MOV $A, 0x00
+    MOV PRIME_MOD_ZERO, $A
+
+    MOV $A, PRIME_REM_B0
+    STC
+    CMP $A, 0x00
+    JNZ .DONE
+    MOV $A, PRIME_REM_B1
+    STC
+    CMP $A, 0x00
+    JNZ .DONE
+    MOV $A, PRIME_REM_B2
+    STC
+    CMP $A, 0x00
+    JNZ .DONE
+    MOV $A, PRIME_REM_B3
+    STC
+    CMP $A, 0x00
+    JNZ .DONE
+
+    MOV $A, 0x01
+    MOV PRIME_MOD_ZERO, $A
+
+.DONE:
+    RTS
+
+
+PRIME_UPDATE_DIVISOR_AND_SQUARE:
+    ; (d + 2)^2 = d^2 + 4d + 4.
+    JSR PRIME_ADD_DIVISOR_TO_SQUARE
+    JSR PRIME_ADD_DIVISOR_TO_SQUARE
+    JSR PRIME_ADD_DIVISOR_TO_SQUARE
+    JSR PRIME_ADD_DIVISOR_TO_SQUARE
+    JSR PRIME_ADD_4_TO_SQUARE
+
+    MOV $A, PRIME_DIV_B0
+    CLC
+    ADD $A, 0x02
+    MOV PRIME_DIV_B0, $A
+
+    MOV $A, PRIME_DIV_B1
+    ADD $A, 0x00
+    MOV PRIME_DIV_B1, $A
+
+    RTS
+
+
+PRIME_ADD_DIVISOR_TO_SQUARE:
+    MOV $A, PRIME_DIV_SQ_B0
+    CLC
+    ADD $A, PRIME_DIV_B0
+    MOV PRIME_DIV_SQ_B0, $A
+
+    MOV $A, PRIME_DIV_SQ_B1
+    ADD $A, PRIME_DIV_B1
+    MOV PRIME_DIV_SQ_B1, $A
+
+    MOV $A, PRIME_DIV_SQ_B2
+    ADD $A, 0x00
+    MOV PRIME_DIV_SQ_B2, $A
+
+    MOV $A, PRIME_DIV_SQ_B3
+    ADD $A, 0x00
+    MOV PRIME_DIV_SQ_B3, $A
+
+    RTS
+
+
+PRIME_ADD_4_TO_SQUARE:
+    MOV $A, PRIME_DIV_SQ_B0
+    CLC
+    ADD $A, 0x04
+    MOV PRIME_DIV_SQ_B0, $A
+
+    MOV $A, PRIME_DIV_SQ_B1
+    ADD $A, 0x00
+    MOV PRIME_DIV_SQ_B1, $A
+
+    MOV $A, PRIME_DIV_SQ_B2
+    ADD $A, 0x00
+    MOV PRIME_DIV_SQ_B2, $A
+
+    MOV $A, PRIME_DIV_SQ_B3
+    ADD $A, 0x00
+    MOV PRIME_DIV_SQ_B3, $A
+
+    RTS
+
+
+PRIME_ADVANCE_CANDIDATE:
+    ; 2 is followed by odd candidates only: 3, 5, 7, ...
+    MOV $A, PRIME_CAND_B3
+    STC
+    CMP $A, 0x00
+    JNZ .ADD_TWO
+    MOV $A, PRIME_CAND_B2
+    STC
+    CMP $A, 0x00
+    JNZ .ADD_TWO
+    MOV $A, PRIME_CAND_B1
+    STC
+    CMP $A, 0x00
+    JNZ .ADD_TWO
+    MOV $A, PRIME_CAND_B0
+    STC
+    CMP $A, 0x02
+    JNZ .ADD_TWO
+
+    MOV $A, PRIME_CAND_B0
+    CLC
+    ADD $A, 0x01
+    MOV PRIME_CAND_B0, $A
+    RTS
+
+.ADD_TWO:
+    MOV $A, PRIME_CAND_B0
+    CLC
+    ADD $A, 0x02
+    MOV PRIME_CAND_B0, $A
+
+    MOV $A, PRIME_CAND_B1
+    ADD $A, 0x00
+    MOV PRIME_CAND_B1, $A
+
+    MOV $A, PRIME_CAND_B2
+    ADD $A, 0x00
+    MOV PRIME_CAND_B2, $A
+
+    MOV $A, PRIME_CAND_B3
+    ADD $A, 0x00
+    MOV PRIME_CAND_B3, $A
+
+    RTS
+
+
+PRIME_INCREMENT_COUNT:
+    MOV $A, PRIME_COUNT_B0
+    CLC
+    ADD $A, 0x01
+    MOV PRIME_COUNT_B0, $A
+
+    MOV $A, PRIME_COUNT_B1
+    ADD $A, 0x00
+    MOV PRIME_COUNT_B1, $A
+
+    MOV $A, PRIME_COUNT_B2
+    ADD $A, 0x00
+    MOV PRIME_COUNT_B2, $A
+
+    MOV $A, PRIME_COUNT_B3
+    ADD $A, 0x00
+    MOV PRIME_COUNT_B3, $A
+
+    RTS
+
+
+PRIME_UPDATE_COUNT_DISPLAY:
+    MOV $A, 0x08
+    MOV $B, 0x02
+    JSR OLED5_SET_CURSOR
+
+    ; Clear the old count before the new one prints.
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+    MOV $A, 0x20
+    JSR OLED5_PUTC
+
+    MOV $A, 0x08
+    MOV $B, 0x02
+    JSR OLED5_SET_CURSOR
+
+    JSR PRIME_PRINT_COUNT_U32_DEC
+
+    RTS
+
+
+PRIME_PRINT_CANDIDATE_U32_DEC:
+    MOV $A, PRIME_CAND_B0
+    MOV PRIME_DEC_B0, $A
+    MOV $A, PRIME_CAND_B1
+    MOV PRIME_DEC_B1, $A
+    MOV $A, PRIME_CAND_B2
+    MOV PRIME_DEC_B2, $A
+    MOV $A, PRIME_CAND_B3
+    MOV PRIME_DEC_B3, $A
+
+    MOV $A, 0x01
+    MOV PRIME_DEC_DATA_MODE, $A
+    JSR PRIME_PRINT_U32_DEC_WORK
+    RTS
+
+
+PRIME_PRINT_COUNT_U32_DEC:
+    MOV $A, PRIME_COUNT_B0
+    MOV PRIME_DEC_B0, $A
+    MOV $A, PRIME_COUNT_B1
+    MOV PRIME_DEC_B1, $A
+    MOV $A, PRIME_COUNT_B2
+    MOV PRIME_DEC_B2, $A
+    MOV $A, PRIME_COUNT_B3
+    MOV PRIME_DEC_B3, $A
+
+    MOV $A, 0x00
+    MOV PRIME_DEC_DATA_MODE, $A
+    JSR PRIME_PRINT_U32_DEC_WORK
+    RTS
+
+
+PRIME_PRINT_U32_DEC_WORK:
+    ; Decimal conversion uses repeated subtraction by place value.
+    MOV $A, 0x00
+    MOV PRIME_DEC_STARTED, $A
+
+    ; 1000000000
+    MOV $A, 0x00
+    MOV PRIME_DEC_CONST_B0, $A
+    MOV $A, 0xCA
+    MOV PRIME_DEC_CONST_B1, $A
+    MOV $A, 0x9A
+    MOV PRIME_DEC_CONST_B2, $A
+    MOV $A, 0x3B
+    MOV PRIME_DEC_CONST_B3, $A
+    MOV $A, 0x00
+    MOV PRIME_DEC_FORCE, $A
+    JSR PRIME_DEC_PLACE
+
+    ; 100000000
+    MOV $A, 0x00
+    MOV PRIME_DEC_CONST_B0, $A
+    MOV $A, 0xE1
+    MOV PRIME_DEC_CONST_B1, $A
+    MOV $A, 0xF5
+    MOV PRIME_DEC_CONST_B2, $A
+    MOV $A, 0x05
+    MOV PRIME_DEC_CONST_B3, $A
+    MOV $A, 0x00
+    MOV PRIME_DEC_FORCE, $A
+    JSR PRIME_DEC_PLACE
+
+    ; 10000000
+    MOV $A, 0x80
+    MOV PRIME_DEC_CONST_B0, $A
+    MOV $A, 0x96
+    MOV PRIME_DEC_CONST_B1, $A
+    MOV $A, 0x98
+    MOV PRIME_DEC_CONST_B2, $A
+    MOV $A, 0x00
+    MOV PRIME_DEC_CONST_B3, $A
+    MOV $A, 0x00
+    MOV PRIME_DEC_FORCE, $A
+    JSR PRIME_DEC_PLACE
+
+    ; 1000000
+    MOV $A, 0x40
+    MOV PRIME_DEC_CONST_B0, $A
+    MOV $A, 0x42
+    MOV PRIME_DEC_CONST_B1, $A
+    MOV $A, 0x0F
+    MOV PRIME_DEC_CONST_B2, $A
+    MOV $A, 0x00
+    MOV PRIME_DEC_CONST_B3, $A
+    MOV $A, 0x00
+    MOV PRIME_DEC_FORCE, $A
+    JSR PRIME_DEC_PLACE
+
+    ; 100000
+    MOV $A, 0xA0
+    MOV PRIME_DEC_CONST_B0, $A
+    MOV $A, 0x86
+    MOV PRIME_DEC_CONST_B1, $A
+    MOV $A, 0x01
+    MOV PRIME_DEC_CONST_B2, $A
+    MOV $A, 0x00
+    MOV PRIME_DEC_CONST_B3, $A
+    MOV $A, 0x00
+    MOV PRIME_DEC_FORCE, $A
+    JSR PRIME_DEC_PLACE
+
+    ; 10000
+    MOV $A, 0x10
+    MOV PRIME_DEC_CONST_B0, $A
+    MOV $A, 0x27
+    MOV PRIME_DEC_CONST_B1, $A
+    MOV $A, 0x00
+    MOV PRIME_DEC_CONST_B2, $A
+    MOV PRIME_DEC_CONST_B3, $A
+    MOV PRIME_DEC_FORCE, $A
+    JSR PRIME_DEC_PLACE
+
+    ; 1000
+    MOV $A, 0xE8
+    MOV PRIME_DEC_CONST_B0, $A
+    MOV $A, 0x03
+    MOV PRIME_DEC_CONST_B1, $A
+    MOV $A, 0x00
+    MOV PRIME_DEC_CONST_B2, $A
+    MOV PRIME_DEC_CONST_B3, $A
+    MOV PRIME_DEC_FORCE, $A
+    JSR PRIME_DEC_PLACE
+
+    ; 100
+    MOV $A, 0x64
+    MOV PRIME_DEC_CONST_B0, $A
+    MOV $A, 0x00
+    MOV PRIME_DEC_CONST_B1, $A
+    MOV PRIME_DEC_CONST_B2, $A
+    MOV PRIME_DEC_CONST_B3, $A
+    MOV PRIME_DEC_FORCE, $A
+    JSR PRIME_DEC_PLACE
+
+    ; 10
+    MOV $A, 0x0A
+    MOV PRIME_DEC_CONST_B0, $A
+    MOV $A, 0x00
+    MOV PRIME_DEC_CONST_B1, $A
+    MOV PRIME_DEC_CONST_B2, $A
+    MOV PRIME_DEC_CONST_B3, $A
+    MOV PRIME_DEC_FORCE, $A
+    JSR PRIME_DEC_PLACE
+
+    ; 1
+    MOV $A, 0x01
+    MOV PRIME_DEC_CONST_B0, $A
+    MOV $A, 0x00
+    MOV PRIME_DEC_CONST_B1, $A
+    MOV PRIME_DEC_CONST_B2, $A
+    MOV PRIME_DEC_CONST_B3, $A
+    MOV $A, 0x01
+    MOV PRIME_DEC_FORCE, $A
+    JSR PRIME_DEC_PLACE
+
+    RTS
+
+
+PRIME_DEC_PLACE:
+    MOV $A, 0x00
+    MOV PRIME_DEC_DIGIT, $A
+
+.PLACE_LOOP:
+    MOV $A, PRIME_DEC_B3
+    STC
+    CMP $A, PRIME_DEC_CONST_B3
+    JNC .PLACE_DONE
+    JZ .CHECK_B2
+    JMP .SUB_CONST
+
+.CHECK_B2:
+    MOV $A, PRIME_DEC_B2
+    STC
+    CMP $A, PRIME_DEC_CONST_B2
+    JNC .PLACE_DONE
+    JZ .CHECK_B1
+    JMP .SUB_CONST
+
+.CHECK_B1:
+    MOV $A, PRIME_DEC_B1
+    STC
+    CMP $A, PRIME_DEC_CONST_B1
+    JNC .PLACE_DONE
+    JZ .CHECK_B0
+    JMP .SUB_CONST
+
+.CHECK_B0:
+    MOV $A, PRIME_DEC_B0
+    STC
+    CMP $A, PRIME_DEC_CONST_B0
+    JNC .PLACE_DONE
+
+.SUB_CONST:
+    MOV $A, PRIME_DEC_B0
+    STC
+    SUB $A, PRIME_DEC_CONST_B0
+    MOV PRIME_DEC_B0, $A
+
+    MOV $A, PRIME_DEC_B1
+    SUB $A, PRIME_DEC_CONST_B1
+    MOV PRIME_DEC_B1, $A
+
+    MOV $A, PRIME_DEC_B2
+    SUB $A, PRIME_DEC_CONST_B2
+    MOV PRIME_DEC_B2, $A
+
+    MOV $A, PRIME_DEC_B3
+    SUB $A, PRIME_DEC_CONST_B3
+    MOV PRIME_DEC_B3, $A
+
+    MOV $A, PRIME_DEC_DIGIT
+    CLC
+    ADD $A, 0x01
+    MOV PRIME_DEC_DIGIT, $A
+
+    JMP .PLACE_LOOP
+
+.PLACE_DONE:
+    MOV $A, PRIME_DEC_DIGIT
+    STC
+    CMP $A, 0x00
+    JNZ .PRINT_DIGIT
+
+    MOV $A, PRIME_DEC_STARTED
+    STC
+    CMP $A, 0x00
+    JNZ .PRINT_DIGIT
+
+    MOV $A, PRIME_DEC_FORCE
+    STC
+    CMP $A, 0x00
+    JNZ .PRINT_DIGIT
+
+    RTS
+
+.PRINT_DIGIT:
+    MOV $A, PRIME_DEC_DIGIT
+    CLC
+    ADD $A, 0x30
+    MOV PRIME_DEC_CHAR_TMP, $A
+
+    MOV $A, 0x01
+    MOV PRIME_DEC_STARTED, $A
+
+    MOV $A, PRIME_DEC_DATA_MODE
+    STC
+    CMP $A, 0x00
+    JZ .PRINT_NORMAL
+
+    MOV $A, PRIME_DEC_CHAR_TMP
+    JSR PRIME_PUTC
+    RTS
+
+.PRINT_NORMAL:
+    MOV $A, PRIME_DEC_CHAR_TMP
+    JSR OLED5_PUTC
+    RTS
+
+
+PRIME_PUTC:
+    JSR OLED5_PUTC
+    JSR PRIME_DATA_WRAP_CHECK
+    RTS
+
+
+PRIME_NEWLINE_AFTER_NUMBER:
+    MOV $A, 0x0A
+    JSR OLED5_PUTC
+    JSR PRIME_DATA_WRAP_CHECK
+    RTS
+
+
+PRIME_DATA_WRAP_CHECK:
+    MOV $A, OLED_CURSOR_ROW
+    STC
+    CMP $A, 0x04
+    JNC .RESET_DATA_AREA
+
+    RTS
+
+.RESET_DATA_AREA:
+    JSR PRIME_CLEAR_DATA_AREA
+    MOV $A, 0x00
+    MOV $B, 0x04
+    JSR OLED5_SET_CURSOR
+    RTS
+
+
+PRIME_CLEAR_DATA_AREA:
+    PSH $A
+    PSH $B
+    PSH $C
+    PSH $D
+
+    MOV $D, 0x04
+
+.CLEAR_ROW:
+    MOV $C, 0x00
+
+.CLEAR_COL:
+    MOV $A, $C
+    MOV $B, $D
+    JSR OLED5_SET_CURSOR
+    JSR OLED5_CLEAR_CURRENT_CELL_DIRECT
+
+    CLC
+    ADD $C, 0x01
+
+    STC
+    CMP $C, OLED5_MAX_COLS
+    JNZ .CLEAR_COL
+
+    CLC
+    ADD $D, 0x01
+
+    STC
+    CMP $D, OLED5_MAX_ROWS
+    JNZ .CLEAR_ROW
+
+    PUL $D
+    PUL $C
+    PUL $B
+    PUL $A
+    RTS
+
+
+SHOWCASE_DELAY_MEDIUM:
+    PSH $A
+    PSH $B
+
+    MOV $A, 0x40
+
+.SDM_OUTER:
+    MOV $B, 0xFF
+
+.SDM_INNER:
+    NOP
+    NOP
+    NOP
+    NOP
+
+    STC
+    SUB $B, 0x01
+    JNZ .SDM_INNER
+
+    STC
+    SUB $A, 0x01
+    JNZ .SDM_OUTER
+
+    PUL $B
+    PUL $A
+    RTS
+
+
+SHOWCASE_DELAY_CURSOR:
+    JSR SHOWCASE_DELAY_MEDIUM
+    JSR SHOWCASE_DELAY_MEDIUM
+    RTS
+
+
+SHOWCASE_DELAY_FAST:
+    PSH $A
+    PSH $B
+
+    MOV $A, 0x10
+
+.SDF_OUTER:
+    MOV $B, 0x80
+
+.SDF_INNER:
+    NOP
+    NOP
+
+    STC
+    SUB $B, 0x01
+    JNZ .SDF_INNER
+
+    STC
+    SUB $A, 0x01
+    JNZ .SDF_OUTER
+
+    PUL $B
+    PUL $A
+    RTS

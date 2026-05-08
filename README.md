@@ -6,9 +6,13 @@ The goal of this repository is to collect the files needed to document, program,
 
 ![Full build](images/full.jpg)
 
-## Project status
+## Blog
 
-The CPU is functional and already runs Fibonacci and display demos. The current development focuses on the SD-card loader, OLED text/monitor work, and the software structure needed for a small monitor-like environment.
+More detailed explanations are available on the project blog:
+
+```text
+https://fadil-1.github.io/blog/8-bit_breadboard_CPU/overview/
+```
 
 ## Acknowledgment
 
@@ -55,8 +59,13 @@ ASM/libs/
     Shared assembly helpers such as timing routines.
 
 ASM/programs/
-    Early standalone demo programs such as Fibonacci, bounce, OLED demos,
-    and display tests.
+    Example programs grouped by how they are loaded.
+
+ASM/programs/loaded_from_ROM/
+    Smaller examples that can run from ROM or older direct-programming flows.
+
+ASM/programs/loaded_from_SD/
+    Larger SD-loaded programs, including prime-number and OLED animation examples.
 
 ASM/ruledef.asm
     Generated CustomASM rule definitions for the current instruction set.
@@ -68,7 +77,7 @@ generated/microcode/
     Generated instruction documentation and microcode ROM images.
 
 tools/microcode/
-    Python microcode generator used to create rule definitions,
+    Python microcode generator used to create CustomASM rule definitions,
     instruction documentation, and the three microcode ROM binaries.
 
 tools/deployment/
@@ -81,13 +90,13 @@ tools/display_rom/
     Generator for the 14-segment display ROM.
 
 tools/oled/
-    OLED-related generator scripts, including the 5x7 text library generator.
+    OLED-related tools, including text-library generators and the SD delta video converter.
 
-EEPROM Programmer/
+arduino_EEPROM_programmer/
     Arduino-based EEPROM programmer material used earlier in the project.
 
-Schematics & Figures/
-    Hardware schematics, diagrams, and exported figures.
+schematics_and_figures/
+    Module schematics, and exported figures.
 
 datasheets/
     Datasheets for ICs and modules used in the build.
@@ -153,7 +162,7 @@ ASM/boot/
     SD-card ROM bootstrap programs.
 
 ASM/drivers/oled/
-    Basic OLED constants and low-level display routines.
+    OLED constants, low-level display routines, text libraries, and graphics primitives.
 
 ASM/drivers/spi_sd/
     SPI and SD-card routines used by the bootloader and future monitor work.
@@ -164,15 +173,26 @@ ASM/libs/
 ASM/programs/
     Early demo programs.
 ```
+
+## OLED text libraries
+
+The OLED driver includes two text layers:
+
+```text
+oled_text_5x7.asm
+    5x7 text in 6x8 cells.
+
+oled_text_4x6.asm
+    Compact 4x6 text in 4x7 cells.
+```
+
+I noticed that **writing on raw pixel row 63 produces a visible artifact near the top of the display**.
+Normal 5x7 text usually hides this because the last row of each 8-pixel cell is blank spacing, but filled graphics can expose it.
+The compact 4x6 library only uses a 32-column by 9-row text grid and avoids raw pixel row 63 altogether.
+
 ## Architecture
 
 ![Architecture diagram](images/architecture.png)
-
-More detailed explanations are available on the project blog:
-
-```text
-https://fadil-1.github.io/blog/8-bit_breadboard_CPU/overview/
-```
 
 ## License
 
